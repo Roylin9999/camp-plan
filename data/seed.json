@@ -500,6 +500,28 @@
    "notes": "兩張 T-230 疊放：下層鐵網、上層黑色鋁板桌面，總高約 48 cm，每層 60×35 cm，單層耐重 20 kg。",
    "shape": "table",
    "w": 62.8
+  },
+  "g_galaxy": {
+   "cat": "桌椅",
+   "color": "#1E1E20",
+   "d": 70,
+   "h": 117,
+   "model": "models/g_galaxy.glb",
+   "name": "樂活不露 銀河椅 七段大川椅（附枕，黑）",
+   "notes": "官方（EX PLUS 超高背）：展開64×72×115cm，收合89×30×22，5.8kg，6063鋁合金＋600D牛津布，七段調背，附頭枕、背後網袋。座高依照片估計約38cm",
+   "shape": "chair",
+   "w": 65
+  },
+  "g_moonlow": {
+   "cat": "桌椅",
+   "color": "#2A2A2C",
+   "d": 57,
+   "h": 64,
+   "model": "models/g_moonlow.glb",
+   "name": "屋諾 OUTDOOR 低背月亮椅",
+   "notes": "官方：56×57×64cm。202005 碳纖維＋CORDURA；202006 鋁合金＋牛津布。顏色未標示，先用深灰",
+   "shape": "chair",
+   "w": 56
   }
  },
  "layouts": {
