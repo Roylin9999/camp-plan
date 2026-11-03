@@ -800,7 +800,8 @@ function makeTree(grp, g, w, h, selected, seed){
 function gearMesh(g, selected, opts){
   const grp = new THREE.Group();
   const real = modelFor(g, opts);
-  if(real){ grp.add(real); grp.add(lineLoop(footprint(g), (g.shape==="tent"?0.6:g.h+0.3), selected? cssVar("--hi") : "#555")); return grp; }
+  /* real models: footprint outline sits on the ground, and only in the 2D top view or when selected */
+  if(real){ grp.add(real); if(selected || U.view==="top") grp.add(lineLoop(footprint(g), 0.6, selected? cssVar("--hi") : "#555")); return grp; }
   const col = new THREE.Color(g.color||"#888");
   const mat = new THREE.MeshStandardMaterial({color:col, roughness:.75, emissive: selected? new THREE.Color(cssVar("--hi")) : 0x000000, emissiveIntensity: selected? .35:0});
   const dark = new THREE.MeshStandardMaterial({color:col.clone().multiplyScalar(.55), roughness:.8});
@@ -857,7 +858,7 @@ function gearMesh(g, selected, opts){
     case "tent": { const s=tentShell(g,.28); s.traverse(o=>{ if(o.isMesh) o.material.emissive=mat.emissive, o.material.emissiveIntensity=mat.emissiveIntensity; }); grp.add(s); break; }
     default: box(w,h,d,0,h/2,0);
   }
-  grp.add(lineLoop(footprint(g), (g.shape==="tent"?0.6:h+0.3), selected? cssVar("--hi") : col.clone().multiplyScalar(.5).getStyle()));
+  if(selected || U.view==="top") grp.add(lineLoop(footprint(g), 0.6, selected? cssVar("--hi") : col.clone().multiplyScalar(.5).getStyle()));
   return grp;
 }
 function gridLines(x0,z0,x1,z1){
