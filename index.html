@@ -109,6 +109,36 @@ kbd{font-family:var(--font-mono);font-size:10px;border:1px solid var(--line);bor
   html,body{height:auto}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* panel toggle + compact toolbar options (phones) */
+.seg .sideBtn{font-size:16px;line-height:1;padding:6px 10px;border-right:1px solid var(--line)}
+.tbBtn{display:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
+.sideShade{display:none}
+.sideClose{display:none;margin:8px 10px 0;align-self:flex-end;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px}
+body.hideSide main{grid-template-columns:1fr}
+body.hideSide aside{display:none}
+@media (max-width:760px){
+  header{padding-block:6px} header .sub{display:none} header h1{font-size:16px}
+  body.hideSide main{grid-template-rows:calc(100dvh - 44px) auto}
+  .tbBtn{display:inline-flex} .tb{display:none} body.tbOpen .tb{display:flex;flex-wrap:wrap}
+  .seg button{padding:6px 9px}
+}
+/* phone held sideways: the 3D view gets the whole screen, the side panel slides in over it */
+@media (orientation:landscape) and (max-height:540px){
+  header{display:none}
+  html,body{height:100%!important} .app{height:100dvh!important;min-height:0!important;grid-template-rows:1fr!important}
+  main{grid-template-columns:1fr!important;grid-template-rows:1fr!important;overflow:hidden!important;position:relative}
+  aside{display:flex!important;position:absolute;z-index:30;left:0;top:0;bottom:0;width:min(340px,58vw);transform:translateX(-102%);transition:transform .2s ease;box-shadow:0 0 24px rgba(0,0,0,.35);overflow:auto!important;border-top:0!important;order:0!important;padding-left:env(safe-area-inset-left,0px)}
+  body.sideOpen aside{transform:none}
+  .sideClose{display:block}
+  body.sideOpen .sideShade{display:block;position:absolute;inset:0;z-index:29;background:rgba(0,0,0,.25)}
+  .stage{order:0!important;height:100dvh}
+  .toolbar{top:6px;left:max(6px,env(safe-area-inset-left,0px));right:max(6px,env(safe-area-inset-right,0px));gap:6px}
+  .seg button{padding:5px 9px;font-size:13px}
+  .tbBtn{display:inline-flex} .tb{display:none} body.tbOpen .tb{display:flex;flex-wrap:wrap}
+  .fp{transform:scale(.78);transform-origin:bottom right;right:max(6px,env(safe-area-inset-right,0px));bottom:6px}
+  .photo{max-height:calc(100% - 60px);overflow:auto}
+  .lbl{font-size:10px}
+}
 </style>
 
 <div class="app">
@@ -119,6 +149,7 @@ kbd{font-family:var(--font-mono);font-size:10px;border:1px solid var(--line);bor
   </header>
   <main>
     <aside>
+      <button class="sideClose" id="sideClose" aria-label="收起面板">✕ 收起面板</button>
       <div class="tabs" role="tablist">
         <button role="tab" id="tabLayout" aria-selected="true">配置圖</button>
         <button role="tab" id="tabGear" aria-selected="false">裝備庫</button>
@@ -126,15 +157,19 @@ kbd{font-family:var(--font-mono);font-size:10px;border:1px solid var(--line);bor
       <div class="pane" id="paneLayout"></div>
       <div class="pane" id="paneGear" hidden></div>
     </aside>
+    <div class="sideShade" id="sideShade"></div>
     <section class="stage" id="stage">
       <div class="toolbar">
         <div class="seg" id="viewSeg">
+          <button class="sideBtn" id="sideBtn" title="顯示／隱藏左側面板" aria-label="顯示或隱藏面板">☰</button>
           <button data-v="top" aria-pressed="true">俯視 2D</button>
           <button data-v="3d" aria-pressed="false">3D</button>
           <button data-v="free" aria-pressed="false" title="自由飛行視角">自由</button>
           <button data-v="walk" aria-pressed="false" title="160 cm 眼高的人物視角">人物</button>
           <button data-v="photo" aria-pressed="false">照片</button>
         </div>
+        <button class="tbBtn" id="tbBtn" title="顯示選項" aria-label="顯示選項">⚙︎</button>
+        <button class="tbBtn" id="fsBtn" title="全螢幕" aria-label="全螢幕">⛶</button>
         <div class="tb">
           <label><input type="checkbox" id="optSnap" checked> 對齊 5cm</label>
           <label><input type="checkbox" id="optLabels" checked> 顯示文字</label>
@@ -720,6 +755,48 @@ function modelFor(g, opts){
   }
   return outer;
 }
+/* tall cedar / pine: tapered furrowed trunk, bare until high up, then layered flat foliage pads on spreading branches */
+let barkTex=null;
+function barkTexture(){ if(barkTex) return barkTex; const c=document.createElement("canvas"); c.width=128; c.height=256; const x=c.getContext("2d");
+  x.fillStyle="#5E4433"; x.fillRect(0,0,128,256);
+  for(let i=0;i<70;i++){ const px=Math.random()*128, w=2+Math.random()*5; x.fillStyle=`rgba(${30+Math.random()*30|0},${20+Math.random()*18|0},${14+Math.random()*12|0},${.35+Math.random()*.4})`; x.fillRect(px,0,w,256); }
+  for(let i=0;i<50;i++){ x.fillStyle=`rgba(${140+Math.random()*50|0},${95+Math.random()*30|0},${70+Math.random()*25|0},${.25+Math.random()*.3})`; x.fillRect(Math.random()*128,Math.random()*256,3+Math.random()*6,10+Math.random()*40); }
+  for(let i=0;i<25;i++){ x.fillStyle="rgba(120,130,95,.25)"; x.fillRect(Math.random()*128,Math.random()*256,4+Math.random()*10,6+Math.random()*16); }
+  barkTex=new THREE.CanvasTexture(c); barkTex.wrapS=barkTex.wrapT=THREE.RepeatWrapping; return barkTex; }
+function seeded(str){ let h=2166136261; for(const ch of String(str||"t")) h=Math.imul(h^ch.charCodeAt(0),16777619); return ()=>{ h=Math.imul(h^(h>>>15),2246822507); h=Math.imul(h^(h>>>13),3266489909); return ((h^=h>>>16)>>>0)/4294967296; }; }
+function makeTree(grp, g, w, h, selected, seed){
+  const rnd=seeded(seed||g.name), r0=w/2;
+  const bt=barkTexture().clone(); bt.needsUpdate=true; bt.repeat.set(1, Math.max(2,h/250));
+  const trunkMat=new THREE.MeshStandardMaterial({map:bt, color:0xffffff, roughness:.95, emissive: selected? 0xFFC107:0x000000, emissiveIntensity: selected? .45:0});
+  const trunkH=h*0.97, tr=new THREE.Mesh(new THREE.CylinderGeometry(r0*0.42, r0, trunkH, 12, 4), trunkMat);
+  const pos=tr.geometry.attributes.position; for(let i=0;i<pos.count;i++){ const y=pos.getY(i)/trunkH+.5, k=1+(rnd()-.5)*.08+Math.sin(y*9+rnd()*6)*.03; pos.setX(i,pos.getX(i)*k); pos.setZ(i,pos.getZ(i)*k); } tr.geometry.computeVertexNormals();
+  tr.position.y=trunkH/2; grp.add(tr);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(r0*1.05, r0*1.45, Math.min(60,h*.04), 12), trunkMat); base.position.y=Math.min(30,h*.02); grp.add(base);
+  const greens=["#2C4A2A","#355A31","#2A4430","#3D6136","#24402A"];
+  const leafMat=greens.map(c=>new THREE.MeshStandardMaterial({color: selected? "#E8C547" : c, roughness:.9, flatShading:true, transparent:true, opacity: selected? .85 : (U.view==="top"?.4:.9), depthWrite:false, emissive: selected? 0x6a5000:0x000000}));
+  const branchMat=new THREE.MeshStandardMaterial({color:"#4A372A", roughness:.95});
+  const crownR=Math.max(130, w*3.6), y0=h*(0.58+rnd()*0.08), layers=5+Math.floor(rnd()*3);
+  const pad=new THREE.IcosahedronGeometry(1,1);
+  for(let L=0;L<layers;L++){
+    const t=L/(layers-1), y=y0+(h*0.98-y0)*t;
+    const spread=crownR*(0.55+0.45*Math.sin(Math.PI*(0.25+0.6*(1-t))))*(0.8+rnd()*0.35);
+    const nb=3+Math.floor(rnd()*3), a0=rnd()*Math.PI*2;
+    for(let b=0;b<nb;b++){
+      const a=a0+b*2*Math.PI/nb+(rnd()-.5)*.8, len=spread*(0.55+rnd()*0.5), lift=len*(0.05+rnd()*0.15);
+      const ex=Math.cos(a)*len, ez=Math.sin(a)*len;
+      const br=new THREE.Mesh(new THREE.CylinderGeometry(r0*0.08, r0*0.18, len, 5), branchMat);
+      br.position.set(ex/2, y+lift/2, ez/2); br.lookAt(ex, y+lift, ez); br.rotateX(Math.PI/2); br.userData.noPick=true; grp.add(br);
+      const pads=2+Math.floor(rnd()*2);
+      for(let k=0;k<pads;k++){
+        const f=0.45+0.55*k/Math.max(1,pads-1), pr=len*(0.42+rnd()*0.25);
+        const m=new THREE.Mesh(pad, leafMat[Math.floor(rnd()*leafMat.length)]);
+        m.scale.set(pr, pr*(0.16+rnd()*0.1), pr*(0.8+rnd()*0.3)); m.rotation.y=a+rnd();
+        m.position.set(ex*f, y+lift*f+pr*0.05, ez*f); m.userData.noPick=true; grp.add(m);
+      }
+    }
+  }
+  const top=new THREE.Mesh(pad, leafMat[0]); top.scale.set(crownR*.28, crownR*.14, crownR*.28); top.position.y=h*0.98; top.userData.noPick=true; grp.add(top);
+}
 function gearMesh(g, selected, opts){
   const grp = new THREE.Group();
   const real = modelFor(g, opts);
@@ -743,8 +820,7 @@ function gearMesh(g, selected, opts){
       const armL=Math.max(10,sd+r*2);
       [-1,1].forEach(sgn=>{ const a=new THREE.Mesh(new THREE.CylinderGeometry(r,r,armL,24), mat); a.rotation.x=Math.PI/2; a.position.set(sgn*(w/2-r),base+r,d/2-armL/2); grp.add(a); });
       break; }
-    case "tree": { const tr=new THREE.Mesh(new THREE.CylinderGeometry(w/2*0.8,w/2,h,20), new THREE.MeshStandardMaterial({color:"#6B5544",roughness:.95, emissive: selected? 0xFFC107 : 0x000000, emissiveIntensity: selected? .55:0})); tr.position.y=h/2; grp.add(tr);
-      const cr=Math.max(120,w*3); const cn=new THREE.Mesh(new THREE.ConeGeometry(cr,h*0.5,16), new THREE.MeshStandardMaterial({color: selected? "#E8C547" : (g.color||"#3F6B45"),roughness:.9,transparent:true,opacity: selected? .7:.55,depthWrite:false, emissive: selected? 0x8a6a00 : 0x000000})); cn.position.y=h*0.72; cn.userData.noPick=true; grp.add(cn); break; }
+    case "tree": { makeTree(grp, g, w, h, selected, opts && opts.seed); break; }
     case "hotpot": { const steel=new THREE.MeshStandardMaterial({color:col, roughness:.35, metalness:.25, emissive: selected? new THREE.Color(cssVar("--hi")) : 0x000000, emissiveIntensity: selected? .3:0});
       const R=w/2, ph=h*0.62, bh=h-ph;
       const burner=new THREE.Mesh(new THREE.CylinderGeometry(R*0.85,R*0.9,bh,32), new THREE.MeshStandardMaterial({color:"#2a2a2a", roughness:.6, metalness:.4})); burner.position.y=bh/2; grp.add(burner);
@@ -853,7 +929,7 @@ function rebuildScene(){
     }
   }
   L.items.forEach(it => { const g0=S.gear[it.gearId]; if(!g0) return; const g=effGear(g0, it);
-    const grp = gearMesh(g, isSel(it.uid), it.tent); grp.position.set(it.x,it.elev||0,it.y); grp.rotation.y = -it.rot*Math.PI/180; if(isSel(it.uid)){ const hl=selHalo(g); hl.position.y=2-(it.elev||0); grp.add(hl); }
+    const grp = gearMesh(g, isSel(it.uid), g.shape==="tree" ? {seed:it.uid} : it.tent); grp.position.set(it.x,it.elev||0,it.y); grp.rotation.y = -it.rot*Math.PI/180; if(isSel(it.uid)){ const hl=selHalo(g); hl.position.y=2-(it.elev||0); grp.add(hl); }
     grp.userData.uid = it.uid; world.add(grp); itemGroups[it.uid]=grp;
     if(it.stand && g.stand){ grp.children.forEach(c=>c.position.y+=STAND_H); grp.add(makeStand(g)); }
     if(it.fire && isPit(g)){ grp.add(makeFire(g)); if(it.fire==="smoke") grp.add(makeSmoke({y0:g.h+Math.min(g.w,g.d)*0.9, r:Math.min(g.w,g.d)*0.3, rise:420, size:[22,140], count:26, period:6.5, color:"#8a8a8a", alpha:.42, drift:60})); }
@@ -984,7 +1060,22 @@ function setView(v){
   $("#photoPanel").hidden = v!=="photo"; topCtl.enabled = v==="top"; perCtl.enabled = v==="3d" || U.tab==="gear";
   $("#scale").hidden = v!=="top"; if(v==="free"||v==="walk") fpEnter(v); rebuildScene(); updateOverlay();
 }
-$("#viewSeg").addEventListener("click", e => { const b=e.target.closest("button"); if(b) { if(U.tab==="gear") setTab("layout"); setView(b.dataset.v); } });
+/* phone layout: ☰ toggles the side panel (a slide-over drawer when the phone is sideways), ⚙ shows the toolbar options, ⛶ goes full screen */
+const landPhone = matchMedia("(orientation:landscape) and (max-height:540px)");
+function toggleSide(force){ if(landPhone.matches){ const on = force!==undefined ? force : !document.body.classList.contains("sideOpen"); document.body.classList.toggle("sideOpen", on); }
+  else { const hide = force!==undefined ? !force : !document.body.classList.contains("hideSide"); document.body.classList.toggle("hideSide", hide); try{ localStorage.setItem("campplan.hideSide", hide?"1":""); }catch(e){} }
+  setTimeout(resize, 30); }
+try{ if(localStorage.getItem("campplan.hideSide")) document.body.classList.add("hideSide"); }catch(e){}
+$("#sideBtn").addEventListener("click", e => { e.stopPropagation(); toggleSide(); });
+$("#sideShade").addEventListener("click", () => toggleSide(false));
+$("#sideClose").addEventListener("click", () => toggleSide(false));
+$("#tbBtn").addEventListener("click", () => document.body.classList.toggle("tbOpen"));
+const fsEl=document.documentElement;
+if(!(fsEl.requestFullscreen||fsEl.webkitRequestFullscreen)) $("#fsBtn").remove();
+else $("#fsBtn").addEventListener("click", () => { const d=document; if(d.fullscreenElement||d.webkitFullscreenElement) (d.exitFullscreen||d.webkitExitFullscreen).call(d); else (fsEl.requestFullscreen||fsEl.webkitRequestFullscreen).call(fsEl); });
+landPhone.addEventListener && landPhone.addEventListener("change", () => { document.body.classList.remove("sideOpen"); setTimeout(resize, 50); });
+window.addEventListener("orientationchange", () => setTimeout(resize, 300));
+$("#viewSeg").addEventListener("click", e => { const b=e.target.closest("button[data-v]"); if(b) { if(U.tab==="gear") setTab("layout"); setView(b.dataset.v); } });
 $("#optSnap").onchange = e => U.snap = e.target.checked;
 $("#optRoof").onchange = e => { U.showRoof = e.target.checked; saveUI(); rebuildScene(); };
 $("#optFab").oninput = e => { U.fabricOp = (+e.target.value)/100; saveUI(); rebuildScene(); };
