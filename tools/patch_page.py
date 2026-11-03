@@ -11,7 +11,7 @@ rep('if(!db){ S.mode="local"; S.ready=true; setStatus("warn","只存在這台裝
       if(!Object.keys(S.gear).length){ S.gear=j.gear||{}; S.layouts=j.layouts||{}; }
       else if(sv>mine){ Object.assign(S.gear, j.gear||{}); Object.entries(j.layouts||{}).forEach(([k,v])=>{ if(!S.layouts[k]) S.layouts[k]=v; }); }
       lsSave(); localStorage.setItem("campplan.seed", String(sv)); }catch(e){}
-    S.ready=true; setStatus("warn","資料存在這台裝置的瀏覽器"); renderAll(); return; }''')
+    S.ready=true; setStatus("warn", fbInit.err ? "雲端連線失敗（" + fbInit.err + "），先存在這台裝置" : "資料存在這台裝置的瀏覽器"); renderAll(); return; }''')
 rep('const assets = window.claude && await claude.use("assets"); if(!assets){ msg.textContent="這個畫面不能上傳檔案（需要編輯權限）。"; return; }',
 '''const assets = window.claude && await claude.use("assets");
       if(!assets){ if(f.size>3e6){ msg.textContent="檔案太大（超過 3MB），網站版請把 .glb 放進 GitHub 的 models 資料夾。"; return; }
@@ -30,6 +30,10 @@ snippet=open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'cloud_snip
 rep('async function initStore(){', snippet+'\nasync function initStore(){')
 rep('try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }',
     'try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }\n  if(!db) db = await fbInit();')
+# site tweak: after picking a gear item, scroll its edit card (name field) into view
+if 'gName").scrollIntoView' not in s:
+    rep('if(row){ U.gearSel=row.dataset.g; U.armed=null; renderGearPane(); rebuildScene(); updateOverlay(); fitView(); return; }',
+        'if(row){ U.gearSel=row.dataset.g; U.armed=null; renderGearPane(); rebuildScene(); updateOverlay(); fitView(); setTimeout(()=>{ const n=$("#gName"); if(n) n.scrollIntoView({behavior:"smooth",block:"center"}); },0); return; }')
 rep('<script src="vendor/CSS3DRenderer.js"></script>', '<script src="vendor/CSS3DRenderer.js"></script>\n<script src="vendor/firebase-app-compat.js"></script>\n<script src="vendor/firebase-firestore-compat.js"></script>\n<script src="firebase-config.js"></script>')
 rep('if(f.size>3e6){ msg.textContent="檔案太大（超過 3MB）', 'if(f.size>7e5){ msg.textContent="檔案太大（超過 700KB）')
 
