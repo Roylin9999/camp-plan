@@ -203,6 +203,7 @@ body.hideSide aside{display:none}
         <div class="tb">
           <label><input type="checkbox" id="optSnap" checked> 對齊 5cm</label>
           <label><input type="checkbox" id="optLabels" checked> 顯示文字</label>
+          <label><input type="checkbox" id="optGrid" checked> 格線</label>
           <label><input type="checkbox" id="optRoof" checked> 帳篷屋頂</label>
           <label>帳篷布 <input type="range" id="optFab" min="0" max="100" value="60" style="width:70px" aria-label="帳篷布不透明度"></label>
         </div>
@@ -1192,6 +1193,9 @@ $("#optSnap").onchange = e => U.snap = e.target.checked;
 $("#optRoof").onchange = e => { U.showRoof = e.target.checked; saveUI(); rebuildScene(); };
 $("#optFab").oninput = e => { U.fabricOp = (+e.target.value)/100; saveUI(); rebuildScene(); };
 $("#optLabels").onchange = e => { U.labels = e.target.checked; $("#labels").hidden = !U.labels; try{ localStorage.setItem("campplan.labels", U.labels?"1":"0"); }catch(err){} };
+/* floor grid on/off (per viewer, remembered in this browser) */
+$("#optGrid").onchange = e => { U.grid = e.target.checked; applyGridOpacity(); try{ localStorage.setItem("campplan.grid", U.grid?"1":"0"); }catch(err){} };
+try{ if(localStorage.getItem("campplan.grid")==="0"){ U.grid=false; $("#optGrid").checked=false; } }catch(err){}
 try{ if(localStorage.getItem("campplan.labels")==="0"){ U.labels=false; $("#optLabels").checked=false; $("#labels").hidden=true; } }catch(err){}
 
 function updateOverlay(){
@@ -1219,7 +1223,7 @@ function updatePhotoCam(){
   ["h","d","a","t","f","g"].forEach(k=>{ const el=$("#p"+k.toUpperCase()+"v"); if(el) el.textContent = PH[k] + ({h:"cm",d:"cm",a:"°",t:"°",f:"°",g:"%"}[k]); });
 }
 function viewCenterFixed(){ const b=layoutBounds(curLayout()); return {x:(b.x0+b.x1)/2,z:(b.z0+b.z1)/2}; }
-function applyGridOpacity(){ if(!gridGroup) return; const o = U.view==="photo" ? PH.g/100 : 1; gridGroup.children.forEach(m=>{ m.material.opacity=o; m.visible=o>0; }); }
+function applyGridOpacity(){ if(!gridGroup) return; gridGroup.visible = U.grid!==false; const o = U.view==="photo" ? PH.g/100 : 1; gridGroup.children.forEach(m=>{ m.material.opacity=o; m.visible=o>0; }); }
 ["H","D","A","T","F","G"].forEach(k => { const el=$("#p"+k); el.addEventListener("input", () => { PH[k.toLowerCase()] = +el.value; updatePhotoCam(); applyGridOpacity(); }); });
 $("#photoFile").addEventListener("change", e => { const f=e.target.files[0]; if(!f) return; if(photoURL) URL.revokeObjectURL(photoURL); photoURL = URL.createObjectURL(f); rebuildScene(); updateOverlay(); });
 
