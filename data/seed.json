@@ -464,20 +464,20 @@
   },
   "g_tingwei": {
    "cat": "帳篷",
-   "color": "#3A485A",
-   "d": 156,
+   "color": "#2E3A4A",
+   "d": 300,
    "doors": [
     [
      "front",
      "前門（外帳）"
     ]
    ],
-   "h": 107,
-   "model": "models/g_tingwei.glb",
-   "name": "庭維帳篷",
-   "notes": "朋友庭維的雙人登山帳（幾何帳），沒有品牌尺寸，照照片估計：外帳約 220×156 cm、高約 105 cm，深藍灰外帳、灰色內帳。前門可開關，關掉屋頂可看內帳。",
+   "h": 110,
+   "model": "models/g_tingwei_v2.glb",
+   "name": "庭維帳篷（Naturehike Cloud Up 3）",
+   "notes": "Naturehike Cloud Up 3 升級版（三人，海軍藍 20D）：含前廳全長 300 cm、寬 180 cm、最高 110 cm，內帳地板 215×180 cm。X 型交叉營柱＋前門帽簷橫桿，門在前端、前廳放鞋子背包。內帳淺灰半網紗、深灰浴缸底，外帳後方兩個通風口。",
    "shape": "tent",
-   "w": 220
+   "w": 190
   },
   "g_t230": {
    "cat": "桌椅",
