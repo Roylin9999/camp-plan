@@ -1,5 +1,5 @@
 {
- "seedVersion": 2,
+ "seedVersion": 3,
  "gear": {
   "g_foldbox55": {
    "cat": "收納",
@@ -12,6 +12,17 @@
    "shape": "box",
    "stand": true,
    "w": 50
+  },
+  "g_snowbench": {
+   "cat": "桌椅",
+   "color": "#222222",
+   "d": 33,
+   "h": 36,
+   "model": "models/g_snowbench.glb",
+   "name": "Snow Peak 紗網折疊板凳（黑）",
+   "notes": "LV-071M-BK，官方 1095×330×360mm，鋁合金黑色骨架、高強度網眼布座面、X 型折疊腳加拉繩",
+   "shape": "box",
+   "w": 109.5
   },
   "g_bed": {
    "cat": "寢具",
@@ -596,15 +607,15 @@
      "gearId": "g_bed",
      "rot": 90,
      "uid": "i_mw08sewh2270y",
-     "x": 1135,
-     "y": 1080
+     "x": 1130,
+     "y": 1120
     },
     {
      "ext": 3,
      "gearId": "g_aka",
      "rot": 90,
      "uid": "i_mw08utanibka5",
-     "x": 850,
+     "x": 860,
      "y": 1110
     }
    ],
@@ -612,7 +623,7 @@
    "name": "營位範例 10×8m",
    "siteD": 2000,
    "siteW": 2000,
-   "updatedAt": "2026-11-03T05:25:39.572Z"
+   "updatedAt": "2026-11-03T05:26:12.589Z"
   }
  }
 }
