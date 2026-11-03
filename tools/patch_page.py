@@ -26,4 +26,12 @@ for f in re.findall(r'https://cdn\.jsdelivr\.net/npm/three@0\.147\.0/([\w/.]+\.j
     assert os.path.exists(os.path.join(vend,name)), 'missing vendor/'+name+' (copy it from the three@0.147.0 npm package)'
     rep('https://cdn.jsdelivr.net/npm/three@0.147.0/'+f, 'vendor/'+name)
 assert 'cdn.jsdelivr' not in s
+snippet=open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'cloud_snippet.js'),encoding='utf8').read()
+rep('async function initStore(){', snippet+'\nasync function initStore(){')
+rep('try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }',
+    'try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }\n  if(!db) db = await fbInit();')
+rep('setStatus("ok","已同步到雲端"); renderAll(); } };', 'setStatus("ok","已同步到雲端"); if(fbSyncSeed.auth && !fbSyncSeed.auth.currentUser) setStatus("warn","未登入：可以看，但改動不會存"); renderAll(); } };')
+rep('<script src="vendor/CSS3DRenderer.js"></script>', '<script src="vendor/CSS3DRenderer.js"></script>\n<script src="vendor/firebase-app-compat.js"></script>\n<script src="vendor/firebase-auth-compat.js"></script>\n<script src="vendor/firebase-firestore-compat.js"></script>\n<script src="firebase-config.js"></script>')
+rep('if(f.size>3e6){ msg.textContent="檔案太大（超過 3MB）', 'if(f.size>7e5){ msg.textContent="檔案太大（超過 700KB）')
+
 open(sys.argv[2],'w',encoding='utf8').write(s)
