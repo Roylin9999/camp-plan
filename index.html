@@ -97,6 +97,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .fpPad button{height:40px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:16px;cursor:pointer;touch-action:none;color:inherit}
 .fpPad button.on{background:var(--accent);color:var(--accent-ink)}
 .fpUD{grid-template-columns:repeat(2,66px)}
+.fpPose{display:flex;gap:4px}.fpPose button{flex:1;height:36px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:inherit;cursor:pointer;font-size:13px;white-space:nowrap}.fpPose button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .fpEye{display:flex;align-items:center;gap:6px}.fpEye input{width:110px}
 .photo .rr{display:grid;grid-template-columns:64px 1fr 48px;gap:6px;align-items:center}
 .help{font-size:11px;color:var(--muted)}
@@ -111,6 +112,9 @@ kbd{font-family:var(--font-mono);font-size:10px;border:1px solid var(--line);bor
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* panel toggle + compact toolbar options (phones) */
 .seg .sideBtn{font-size:16px;line-height:1;padding:6px 10px;border-right:1px solid var(--line)}
+.sndBtn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
+.sndBtn[hidden]{display:none}
+.sndBtn[aria-pressed="true"]{color:var(--muted)}
 .tbBtn{display:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
 .sideShade{display:none}
 .sideClose{display:none;margin:8px 10px 0;align-self:flex-end;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px}
@@ -168,6 +172,7 @@ body.hideSide aside{display:none}
           <button data-v="walk" aria-pressed="false" title="160 cm 眼高的人物視角">人物</button>
           <button data-v="photo" aria-pressed="false">照片</button>
         </div>
+        <button class="sndBtn" id="sndBtn" title="投影聲音" aria-label="投影聲音" hidden>🔊 聲音開</button>
         <button class="tbBtn" id="tbBtn" title="顯示選項" aria-label="顯示選項">⚙︎</button>
         <button class="tbBtn" id="fsBtn" title="全螢幕" aria-label="全螢幕">⛶</button>
         <div class="tb">
@@ -187,6 +192,7 @@ body.hideSide aside{display:none}
           <button data-k="sl" aria-label="向左平移">◀</button><span></span><button data-k="sr" aria-label="向右平移">▶</button>
         </div>
         <div class="fpPad fpUD" id="fpUD"><button data-k="up" aria-label="上升">升</button><button data-k="down" aria-label="下降">降</button></div>
+        <div class="fpPose" id="fpPose"><button data-pose="stand" aria-pressed="true">🧍 站</button><button data-pose="sit" aria-pressed="false">🪑 坐下</button><button data-pose="lie" aria-pressed="false">🛌 躺下</button></div>
         <label class="fpEye" id="fpEyeRow">眼高 <input type="range" id="fpEye" min="60" max="200" step="5" value="160"> <span id="fpEyeTxt">160</span> cm</label>
       </div>
       <div class="photo" id="photoPanel" hidden>
@@ -397,7 +403,7 @@ function renderLayoutPane(){
       <div class="row"><label class="btn" style="flex:1;text-align:center">🎞 ${movieName?esc(movieName):"選擇影片檔…"}<input type="file" id="iMovie" accept="video/*" hidden></label>${movieVideo?`<button class="btn" id="iMute">${movieVideo.muted?"🔇":"🔊"}</button>`:""}</div>
       ${it.on && ytId(it.yt!==undefined?it.yt:g.yt) ? `<div class="row"><button class="btn" id="iYTSound">${ytMuted?"🔇 開聲音":"🔊 靜音"}</button></div>` : ""}
       <label class="f">YouTube 連結<input type="text" id="iYT" placeholder="貼上 YouTube 網址" value="${esc(it.yt!==undefined?it.yt:(g.yt?"https://youtu.be/"+g.yt:""))}"></label>
-      <div class="help">有 YouTube 連結時，布幕會播那部影片（預設有聲音；瀏覽器規定要先點一下畫面才會出聲，不想要聲音按「靜音」）。清空連結會改播動畫。也可以選電腦裡的影片檔，影片檔不會上傳，重新整理後要再選一次。</div>`:""}
+      <div class="help">有 YouTube 連結時，布幕會播那部影片（預設有聲音；瀏覽器規定要先點一下畫面才會出聲。上方工具列的「🔊 聲音開」可以隨時靜音）。清空連結會改播動畫。也可以選電腦裡的影片檔，影片檔不會上傳，重新整理後要再選一次。</div>`:""}
       ${isPit(g)?`<div class="sec"><h3>焚火台</h3><div class="chips">${[["off","🪵 熄火"],["fire","🔥 火"],["smoke","🔥💨 火＋煙"]].map(([k,n])=>`<button class="chip" data-fire="${k}" aria-pressed="${fireMode(it)===k}">${n}</button>`).join("")}</div></div>`:""}
       ${g.shape==="hotpot"?`<div class="row"><button class="btn ${it.boil?"primary":""}" id="iBoil">${it.boil?"♨️ 煮滾中（按此關火）":"🍲 開火煮滾"}</button></div>`:""}
       <div class="row"><button class="btn ${it.locked?"primary":""}" id="iLock">${it.locked?"🔒 已鎖定（按此解鎖）":"🔓 鎖定位置"}</button></div>
@@ -419,7 +425,7 @@ function renderLayoutPane(){
     } else h += `<div class="empty">裝備庫還沒有東西，到「裝備庫」分頁新增。</div>`;
     h += `</div>`;
     const its = L.items.filter(i=>S.gear[i.gearId]);
-    if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${i.grp?"🔗 ":""}${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西；在畫面上連點兩下可以選到鎖住的物品。點名稱可以選取。</div></div>`;
+    if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${lockAllRow(its)}${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${i.grp?"🔗 ":""}${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西；在畫面上連點兩下可以選到鎖住的物品。點名稱可以選取。</div></div>`;
     h += `<div class="sec"><details><summary><strong>⌨️ 快捷鍵（仿 CorelDRAW）</strong></summary><div class="help" style="line-height:1.9">
       <kbd>Shift</kbd>/<kbd>Ctrl</kbd>+點 加選・減選<br><kbd>Ctrl</kbd>+<kbd>A</kbd> 全選（未鎖定）・<kbd>Esc</kbd> 取消選取<br>
       <kbd>Ctrl</kbd>+<kbd>G</kbd> 群組・<kbd>Ctrl</kbd>+<kbd>U</kbd> 解散群組<br>
@@ -486,6 +492,7 @@ $("#paneLayout").addEventListener("click", e => {
   if(b.dataset.pick && L){ const id=b.dataset.pick; if(U.multiMode || e.shiftKey || e.ctrlKey || e.metaKey) toggleSel(id); else if(U.sel===id && selIds().length===grpMembers(id).length) clearSel(); else selectOne(id); renderLayoutPane(); rebuildScene(); return; }
   if(b.dataset.ext!==undefined && L){ const it=selItem(); if(it){ it.ext=+b.dataset.ext; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); } return; }
   if(b.id==="mMode"){ U.multiMode=!U.multiMode; renderLayoutPane(); return; }
+  if(b.dataset.lockall && L){ const its=L.items.filter(LOCK_KIND[b.dataset.lockall]); const lock=its.some(i=>!i.locked); its.forEach(i=>{ i.locked=lock; }); if(lock){ U.multi=(U.multi||[]).filter(u=>!its.some(i=>i.uid===u)); } saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="mAll" && L){ U.multi=L.items.filter(i=>!i.locked && S.gear[i.gearId]).map(i=>i.uid); U.sel=U.multi[U.multi.length-1]||null; renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="mRot") return rotateGroup(90);
   if(b.id==="mDup") return dupGroup();
@@ -498,9 +505,9 @@ $("#paneLayout").addEventListener("click", e => {
   if(b.id==="cpPlace"){ U.placing=!U.placing; renderLayoutPane(); return; }
   if(b.id==="mDel") return delGroup();
   if(b.id==="mNone"){ clearSel(); renderLayoutPane(); rebuildScene(); return; }
-  if(b.id==="iYTSound"){ ytMuted=!ytMuted; ytCmd(ytMuted?"mute":"unMute"); ytCmd("playVideo"); renderLayoutPane(); return; }
+  if(b.id==="iYTSound"){ setSound(ytMuted); return; }
   if(b.id==="iScreen"){ const it=selItem(); if(it){ it.on=!it.on; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
-  if(b.id==="iMute" && movieVideo){ movieVideo.muted=!movieVideo.muted; movieSound=!movieVideo.muted; if(!movieVideo.paused||screensOn) movieVideo.play().catch(()=>{}); renderLayoutPane(); return; }
+  if(b.id==="iMute" && movieVideo){ setSound(movieVideo.muted); return; }
   if(b.dataset.fire && L){ const it=selItem(); if(it){ const k=b.dataset.fire; it.fire = k==="off" ? false : k==="smoke" ? "smoke" : true; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iBoil"){ const it=selItem(); if(it){ it.boil=!it.boil; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iLock"){ const it=selItem(); if(it){ it.locked=!it.locked; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
@@ -589,6 +596,11 @@ function regroup(list){ const m={}; list.forEach(c=>{ if(c.grp){ m[c.grp]=m[c.gr
 function selectOne(id){ U.multi=grpMembers(id); U.sel=id; }
 function groupSel(){ const its=selItems(); if(its.length<2) return; const g=uid("g"); its.forEach(i=>i.grp=g); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function ungroupSel(){ const its=selItems(); if(!its.some(i=>i.grp)) return; its.forEach(i=>delete i.grp); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+/* lock or unlock every tree / every tent in the layout with one button */
+const LOCK_KIND = { tree: i=>{ const g=S.gear[i.gearId]; return g && g.shape==="tree"; }, tent: i=>{ const g=S.gear[i.gearId]; return g && (g.shape==="tent" || g.cat==="帳篷"); } };
+function lockAllRow(its){ const out=[]; [["tree","🌲","樹木"],["tent","⛺","帳篷"]].forEach(([k,ic,n])=>{ const list=its.filter(LOCK_KIND[k]); if(!list.length) return; const all=list.every(i=>i.locked);
+  out.push(`<button class="btn ${all?"primary":""}" data-lockall="${k}" title="${list.length} 個${n}">${ic} ${all?"🔒 解除固定所有"+n:"固定所有"+n}（${list.length}）</button>`); });
+  return out.length?`<div class="row">${out.join("")}</div>`:""; }
 function selectAll(){ const L=curLayout(); if(!L) return; U.multi=L.items.filter(i=>!i.locked && S.gear[i.gearId]).map(i=>i.uid); U.sel=U.multi[U.multi.length-1]||null; rebuildScene(); renderLayoutPane(); }
 function toggleSel(id){ let m = selIds(); const g=grpMembers(id); if(m.includes(id)){ m=m.filter(x=>!g.includes(x)); U.multi=m; U.sel=m[m.length-1]||null; } else { g.forEach(x=>{ if(!m.includes(x)) m.push(x); }); U.multi=m; U.sel=id; } }
 function moveSel(dx,dy){ selItems().filter(i=>!i.locked).forEach(i=>{ i.x+=dx; i.y+=dy; }); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
@@ -660,7 +672,7 @@ const topCtl = new THREE.OrbitControls(topCam, renderer.domElement);
 topCtl.enableRotate=false; topCtl.screenSpacePanning=true; topCtl.mouseButtons={LEFT:THREE.MOUSE.PAN, MIDDLE:THREE.MOUSE.DOLLY, RIGHT:THREE.MOUSE.PAN}; topCtl.touches={ONE:THREE.TOUCH.PAN, TWO:THREE.TOUCH.DOLLY_PAN}; topCtl.minZoom=0.2; topCtl.maxZoom=20;
 const perCtl = new THREE.OrbitControls(perCam, renderer.domElement);
 const fpCam = new THREE.PerspectiveCamera(65, 1, 1, 50000); fpCam.rotation.order = "YXZ";
-const FP = {x:0, y:160, z:0, yaw:0, pitch:0, eye:160, init:null, keys:{}, look:null};
+const FP = {x:0, y:160, z:0, yaw:0, pitch:0, eye:160, pose:"stand", init:null, keys:{}, look:null};
 perCtl.maxPolarAngle = Math.PI/2 - 0.02; perCtl.enableDamping=true;
 const world = new THREE.Group(); scene.add(world);
 let itemGroups = {};
@@ -966,6 +978,14 @@ let ytWanted = [], ytLive = {}, ytMuted = false;   /* sound on by default; the u
 /* Browsers only allow sound after the user has tapped the page once, so videos start muted and get unmuted on the first tap (or right away if the page was already tapped). */
 function userActive(){ return !navigator.userActivation || navigator.userActivation.hasBeenActive; }
 function wantSound(){ if(!ytMuted){ ytCmd("unMute"); ytCmd("playVideo"); } if(movieVideo && movieVideo.muted && movieSound){ movieVideo.muted=false; movieVideo.play().catch(()=>{}); } }
+/* one switch for all projector sound, shown in the top toolbar while a screen is playing */
+function setSound(on){ ytMuted=!on; movieSound=on; ytCmd(on?"unMute":"mute"); ytCmd("playVideo");
+  if(movieVideo){ movieVideo.muted=!on; if(!movieVideo.paused||screensOn) movieVideo.play().catch(()=>{}); }
+  updSnd(); renderLayoutPane(); }
+function updSnd(){ const b=document.getElementById("sndBtn"); if(!b) return; const playing = Object.keys(ytLive).length>0 || (movieVideo && screensOn>0);
+  b.hidden=!playing; const on=!ytMuted, wait=on && !userActive(); b.dataset.wait=wait?"1":""; b.textContent=wait?"🔈 點一下出聲":on?"🔊 聲音開":"🔇 已靜音"; b.setAttribute("aria-pressed", String(!on)); b.title=on?"點一下靜音":"點一下開聲音"; }
+setInterval(updSnd, 600);
+document.addEventListener("click", e=>{ if(e.target.closest && e.target.closest("#sndBtn")){ const b=document.getElementById("sndBtn"); setSound(b.dataset.wait==="1" ? true : ytMuted); } });
 ["pointerdown","keydown","touchend"].forEach(ev=>window.addEventListener(ev, ()=>setTimeout(wantSound,0), true));
 function ytCmd(func){ for(const k in ytLive){ const f=ytLive[k].element.querySelector("iframe"); try{ f.contentWindow.postMessage(JSON.stringify({event:"command", func, args:[]}), "*"); }catch(err){} } }
 const cssScene = new THREE.Scene(); let cssR = null;
@@ -1180,17 +1200,24 @@ document.addEventListener("keyup", e => { const k=KEYMAP[e.code]; if(k) FP.keys[
 window.addEventListener("blur", () => { FP.keys={}; });
 $("#fpPanel").addEventListener("pointerdown", e => { const b=e.target.closest("[data-k]"); if(!b) return; e.preventDefault(); FP.keys[b.dataset.k]=true; b.classList.add("on"); b.setPointerCapture(e.pointerId); });
 ["pointerup","pointercancel","lostpointercapture"].forEach(ev => $("#fpPanel").addEventListener(ev, e => { const b=e.target.closest("[data-k]"); if(!b) return; FP.keys[b.dataset.k]=false; b.classList.remove("on"); }));
-$("#fpEye").addEventListener("input", e => { FP.eye=+e.target.value; $("#fpEyeTxt").textContent=FP.eye; if(U.view==="walk") FP.y=FP.eye; });
+$("#fpEye").addEventListener("input", e => { FP.eye=+e.target.value; $("#fpEyeTxt").textContent=FP.eye; if(U.view==="walk") FP.y=eyeH(); });
+/* posture in 人物 view: sitting on a camp chair puts the eyes ~105 cm up, lying on the ground ~28 cm and looking up at the sky */
+const POSE_EYE = {sit:105, lie:28};
+function eyeH(){ return POSE_EYE[FP.pose] || FP.eye; }
+function setPose(p){ const was=FP.pose; FP.pose=p; FP.y=eyeH();
+  if(p==="lie") FP.pitch=0.75; else if(was==="lie") FP.pitch=-0.08;
+  document.querySelectorAll("#fpPose [data-pose]").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.pose===p))); fpApply(); }
+$("#fpPose").addEventListener("click", e => { const b=e.target.closest("[data-pose]"); if(b) setPose(b.dataset.pose); });
 function fpPanelUI(){
   const walk = U.view==="walk";
   $("#fpHelp").innerHTML = walk ? "人物視角：<kbd>W</kbd><kbd>S</kbd> 或 ↑↓ 前進後退、<kbd>A</kbd><kbd>D</kbd> 平移、←→ 轉向、按住 <kbd>Shift</kbd> 跑步。拖曳畫面看四周。" : "自由視角：<kbd>W</kbd><kbd>S</kbd> 朝看的方向飛、<kbd>A</kbd><kbd>D</kbd> 平移、←→ 轉向、<kbd>空白</kbd>/<kbd>C</kbd> 上升下降、<kbd>Shift</kbd> 加速。拖曳畫面看四周。";
-  $("#fpUD").hidden = walk; $("#fpEyeRow").hidden = !walk;
+  $("#fpUD").hidden = walk; $("#fpEyeRow").hidden = !walk; $("#fpPose").hidden = !walk;
 }
 function fpEnter(v){
   const L=curLayout(); if(!L) return; const b=layoutBounds(L), cx=(b.x0+b.x1)/2, cz=(b.z0+b.z1)/2;
   if(v==="walk"){
     if(FP.init!=="walk"){ FP.x=cx; FP.z=b.z1+120; FP.yaw=0; FP.pitch=-0.08; }
-    FP.y=FP.eye; FP.pitch=Math.max(-0.9,Math.min(0.9,FP.pitch));
+    FP.y=eyeH(); FP.pitch=Math.max(-0.9,Math.min(FP.pose==="lie"?1.45:0.9,FP.pitch));
   } else if(FP.init!=="free"){
     if(FP.init==="walk"){ FP.y=Math.max(FP.y,FP.eye); }
     else { FP.x=perCam.position.x; FP.y=Math.max(60,perCam.position.y); FP.z=perCam.position.z; const d=new THREE.Vector3(); perCam.getWorldDirection(d); FP.yaw=Math.atan2(-d.x,-d.z); FP.pitch=Math.asin(Math.max(-1,Math.min(1,d.y))); }
@@ -1205,7 +1232,7 @@ function fpStep(){
   if(k.left) FP.yaw+=turn; if(k.right) FP.yaw-=turn;
   const fx=-Math.sin(FP.yaw), fz=-Math.cos(FP.yaw), rx=Math.cos(FP.yaw), rz=-Math.sin(FP.yaw);
   let f=(k.fwd?1:0)-(k.back?1:0), st=(k.sr?1:0)-(k.sl?1:0);
-  if(walk){ FP.x+=(fx*f+rx*st)*sp; FP.z+=(fz*f+rz*st)*sp; FP.y=FP.eye; }
+  if(walk){ FP.x+=(fx*f+rx*st)*sp; FP.z+=(fz*f+rz*st)*sp; FP.y=eyeH(); }
   else { const cp=Math.cos(FP.pitch); FP.x+=(fx*cp*f+rx*st)*sp; FP.z+=(fz*cp*f+rz*st)*sp; FP.y+=Math.sin(FP.pitch)*f*sp + ((k.up?1:0)-(k.down?1:0))*sp; FP.y=Math.max(20,FP.y); }
   fpApply();
 }
