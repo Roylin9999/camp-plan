@@ -267,7 +267,7 @@ async function initStore(){
   const done = () => { got++; if(got>=2 && !S.ready){ S.ready=true; clearTimeout(timer); setStatus("ok","已同步到雲端"); if(fbSyncSeed.auth && !fbSyncSeed.auth.currentUser) setStatus("warn","未登入：可以看，但改動不會存"); renderAll(); } };
   const sub = (col, key) => db.collection(col).onSnapshot(snap => {
     const m = {}; snap.docs.forEach(d => { m[d.id] = JSON.parse(JSON.stringify(d.data()||{})); });
-    S[key] = m; done(); if(S.ready){ setStatus("ok","已同步到雲端"); scheduleRender(); }
+    S[key] = m; done(); if(S.ready){ if(fbSyncSeed.auth && !fbSyncSeed.auth.currentUser) setStatus("warn","未登入：可以看，但改動不會存"); else setStatus("ok","已同步到雲端"); scheduleRender(); }
   }, e => { setStatus("warn","雲端讀取失敗：" + (e && e.code || "")); done(); });
   sub("gear","gear"); sub("layouts","layouts");
 }

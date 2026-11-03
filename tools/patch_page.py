@@ -31,6 +31,7 @@ rep('async function initStore(){', snippet+'\nasync function initStore(){')
 rep('try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }',
     'try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }\n  if(!db) db = await fbInit();')
 rep('setStatus("ok","已同步到雲端"); renderAll(); } };', 'setStatus("ok","已同步到雲端"); if(fbSyncSeed.auth && !fbSyncSeed.auth.currentUser) setStatus("warn","未登入：可以看，但改動不會存"); renderAll(); } };')
+rep('S[key] = m; done(); if(S.ready){ setStatus("ok","已同步到雲端");', 'S[key] = m; done(); if(S.ready){ if(fbSyncSeed.auth && !fbSyncSeed.auth.currentUser) setStatus("warn","未登入：可以看，但改動不會存"); else setStatus("ok","已同步到雲端");')
 rep('<script src="vendor/CSS3DRenderer.js"></script>', '<script src="vendor/CSS3DRenderer.js"></script>\n<script src="vendor/firebase-app-compat.js"></script>\n<script src="vendor/firebase-auth-compat.js"></script>\n<script src="vendor/firebase-firestore-compat.js"></script>\n<script src="firebase-config.js"></script>')
 rep('if(f.size>3e6){ msg.textContent="檔案太大（超過 3MB）', 'if(f.size>7e5){ msg.textContent="檔案太大（超過 700KB）')
 
