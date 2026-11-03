@@ -217,7 +217,8 @@ async function fbInit(){
     const raw = firebase.firestore();
     /* all data lives in collections named campplan_* so the Firebase project can be shared with other apps */
     const fs = { collection: c => raw.collection("campplan_" + c), batch: () => raw.batch() };
-    fbSyncSeed(fs).catch(e => console.warn("seed", e));
+    /* fill the cloud before showing it; if the cloud can't be reached or written, stay on this browser's copy */
+    await fbSyncSeed(fs);
     return fs;
   }catch(e){ console.warn("firebase", e); return null; }
 }
