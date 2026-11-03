@@ -397,7 +397,7 @@ function renderLayoutPane(){
       <div class="row"><label class="btn" style="flex:1;text-align:center">🎞 ${movieName?esc(movieName):"選擇影片檔…"}<input type="file" id="iMovie" accept="video/*" hidden></label>${movieVideo?`<button class="btn" id="iMute">${movieVideo.muted?"🔇":"🔊"}</button>`:""}</div>
       ${it.on && ytId(it.yt!==undefined?it.yt:g.yt) ? `<div class="row"><button class="btn" id="iYTSound">${ytMuted?"🔇 開聲音":"🔊 靜音"}</button></div>` : ""}
       <label class="f">YouTube 連結<input type="text" id="iYT" placeholder="貼上 YouTube 網址" value="${esc(it.yt!==undefined?it.yt:(g.yt?"https://youtu.be/"+g.yt:""))}"></label>
-      <div class="help">有 YouTube 連結時，布幕會播那部影片（先靜音自動播放，按上面的按鈕開聲音）。清空連結會改播動畫。也可以選電腦裡的影片檔，影片檔不會上傳，重新整理後要再選一次。</div>`:""}
+      <div class="help">有 YouTube 連結時，布幕會播那部影片（預設有聲音；瀏覽器規定要先點一下畫面才會出聲，不想要聲音按「靜音」）。清空連結會改播動畫。也可以選電腦裡的影片檔，影片檔不會上傳，重新整理後要再選一次。</div>`:""}
       ${isPit(g)?`<div class="sec"><h3>焚火台</h3><div class="chips">${[["off","🪵 熄火"],["fire","🔥 火"],["smoke","🔥💨 火＋煙"]].map(([k,n])=>`<button class="chip" data-fire="${k}" aria-pressed="${fireMode(it)===k}">${n}</button>`).join("")}</div></div>`:""}
       ${g.shape==="hotpot"?`<div class="row"><button class="btn ${it.boil?"primary":""}" id="iBoil">${it.boil?"♨️ 煮滾中（按此關火）":"🍲 開火煮滾"}</button></div>`:""}
       <div class="row"><button class="btn ${it.locked?"primary":""}" id="iLock">${it.locked?"🔒 已鎖定（按此解鎖）":"🔓 鎖定位置"}</button></div>
@@ -500,7 +500,7 @@ $("#paneLayout").addEventListener("click", e => {
   if(b.id==="mNone"){ clearSel(); renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="iYTSound"){ ytMuted=!ytMuted; ytCmd(ytMuted?"mute":"unMute"); ytCmd("playVideo"); renderLayoutPane(); return; }
   if(b.id==="iScreen"){ const it=selItem(); if(it){ it.on=!it.on; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
-  if(b.id==="iMute" && movieVideo){ movieVideo.muted=!movieVideo.muted; if(!movieVideo.paused||screensOn) movieVideo.play().catch(()=>{}); renderLayoutPane(); return; }
+  if(b.id==="iMute" && movieVideo){ movieVideo.muted=!movieVideo.muted; movieSound=!movieVideo.muted; if(!movieVideo.paused||screensOn) movieVideo.play().catch(()=>{}); renderLayoutPane(); return; }
   if(b.dataset.fire && L){ const it=selItem(); if(it){ const k=b.dataset.fire; it.fire = k==="off" ? false : k==="smoke" ? "smoke" : true; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iBoil"){ const it=selItem(); if(it){ it.boil=!it.boil; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iLock"){ const it=selItem(); if(it){ it.locked=!it.locked; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
@@ -962,7 +962,11 @@ function animateSmoke(t){
 }
 /* YouTube on the projector screen: an iframe placed in 3D with CSS3DRenderer, on top of the WebGL canvas */
 function ytId(v){ if(!v) return ""; v=String(v).trim(); const m=v.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m?m[1]:(/^[\w-]{11}$/.test(v)?v:""); }
-let ytWanted = [], ytLive = {}, ytMuted = true;
+let ytWanted = [], ytLive = {}, ytMuted = false;   /* sound on by default; the user can mute */
+/* Browsers only allow sound after the user has tapped the page once, so videos start muted and get unmuted on the first tap (or right away if the page was already tapped). */
+function userActive(){ return !navigator.userActivation || navigator.userActivation.hasBeenActive; }
+function wantSound(){ if(!ytMuted){ ytCmd("unMute"); ytCmd("playVideo"); } if(movieVideo && movieVideo.muted && movieSound){ movieVideo.muted=false; movieVideo.play().catch(()=>{}); } }
+["pointerdown","keydown","touchend"].forEach(ev=>window.addEventListener(ev, ()=>setTimeout(wantSound,0), true));
 function ytCmd(func){ for(const k in ytLive){ const f=ytLive[k].element.querySelector("iframe"); try{ f.contentWindow.postMessage(JSON.stringify({event:"command", func, args:[]}), "*"); }catch(err){} } }
 const cssScene = new THREE.Scene(); let cssR = null;
 try { if(THREE.CSS3DRenderer){ cssR = new THREE.CSS3DRenderer(); const el=cssR.domElement; el.style.position="absolute"; el.style.inset="0"; el.style.pointerEvents="none"; el.style.zIndex="0"; el.className="ytLayer"; stage.insertBefore(el, renderer.domElement); renderer.domElement.style.position="relative"; renderer.domElement.style.zIndex="1"; cssR.setSize(stage.clientWidth||1, stage.clientHeight||1); } } catch(err){ cssR=null; }
@@ -972,7 +976,7 @@ function syncYT(){
   const keep = new Set();
   want.forEach(w => { const key=w.uid+"|"+w.id; keep.add(key); let o=ytLive[key];
     if(!o){ const div=document.createElement("div"); div.style.width=(w.w*PXCM)+"px"; div.style.height=(w.h*PXCM)+"px"; div.style.background="#000"; div.style.pointerEvents="auto";
-      const f=document.createElement("iframe"); f.src=`https://www.youtube.com/embed/${w.id}?autoplay=1&mute=1&loop=1&playlist=${w.id}&playsinline=1&rel=0&enablejsapi=1`; f.allow="autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen=true; f.style.cssText="width:100%;height:100%;border:0"; div.appendChild(f);
+      const f=document.createElement("iframe"); f.src=`https://www.youtube.com/embed/${w.id}?autoplay=1&mute=1&loop=1&playlist=${w.id}&playsinline=1&rel=0&enablejsapi=1`; f.allow="autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen=true; f.style.cssText="width:100%;height:100%;border:0"; f.addEventListener("load",()=>{ [800,2000,4000].forEach(t=>setTimeout(()=>{ if(!ytMuted && userActive()){ ytCmd("unMute"); ytCmd("playVideo"); } },t)); }); div.appendChild(f);
       o=new THREE.CSS3DObject(div); cssScene.add(o); ytLive[key]=o; }
     w.mesh.updateWorldMatrix(true,false); w.mesh.matrixWorld.decompose(o.position, o.quaternion, o.scale); o.scale.multiplyScalar(1/PXCM); o.position.add(new THREE.Vector3(0,0,0.6).applyQuaternion(o.quaternion)); });
   for(const k in ytLive) if(!keep.has(k)){ cssScene.remove(ytLive[k]); delete ytLive[k]; }
@@ -990,7 +994,7 @@ function makeStand(g){
   s.traverse(o=>{ if(o.isMesh) o.userData.stand=true; });
   return s;
 }
-let screensOn = 0, movieTex = null, movieCv = null, movieVideo = null, movieName = "";
+let screensOn = 0, movieTex = null, movieCv = null, movieVideo = null, movieName = "", movieSound = true;
 function movieMaterial(){
   if(movieVideo){ if(!movieTex || !movieTex.isVideoTexture){ movieTex = new THREE.VideoTexture(movieVideo); if(THREE.sRGBEncoding) movieTex.encoding=THREE.sRGBEncoding; } movieVideo.play().catch(()=>{ movieVideo.muted=true; movieVideo.play().catch(()=>{}); }); }
   else if(!movieTex){ movieCv=document.createElement("canvas"); movieCv.width=640; movieCv.height=360; movieTex=new THREE.CanvasTexture(movieCv); if(THREE.sRGBEncoding) movieTex.encoding=THREE.sRGBEncoding; }
@@ -1013,7 +1017,7 @@ function drawMovie(t){
 function setMovieFile(f){
   if(movieVideo){ movieVideo.pause(); URL.revokeObjectURL(movieVideo.src); }
   movieVideo=document.createElement("video"); movieVideo.src=URL.createObjectURL(f); movieVideo.loop=true; movieVideo.playsInline=true; movieVideo.crossOrigin="anonymous";
-  movieName=f.name; movieTex=null; rebuildScene(); renderLayoutPane();
+  movieName=f.name; movieSound=true; movieTex=null; rebuildScene(); renderLayoutPane();
 }
 function makeFire(g){
   const f = new THREE.Group(); f.position.y = g.h*0.8; const r = Math.min(g.w,g.d)*0.34;
