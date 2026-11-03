@@ -208,7 +208,14 @@ function deleteDoc(col, id){
   else lsSave();
 }
 function saveGear(id){ writeDoc("gear", id, S.gear[id]); }
-function saveLayout(id){ S.layouts[id].updatedAt = new Date().toISOString(); writeDoc("layouts", id, S.layouts[id]); }
+/* undo / redo: per-layout snapshots of items, recorded whenever a layout is saved */
+const HIST={};
+function histOf(id){ const L=S.layouts[id]; if(!L) return null; if(!HIST[id]) HIST[id]={snap:JSON.stringify(L.items||[]), undo:[], redo:[]}; return HIST[id]; }
+function histRecord(id){ if(U.noHist) return; const L=S.layouts[id], h=histOf(id); if(!L||!h) return; const cur=JSON.stringify(L.items||[]); if(cur!==h.snap){ h.undo.push(h.snap); if(h.undo.length>100) h.undo.shift(); h.redo=[]; h.snap=cur; } }
+function histStep(back){ const id=U.layoutId, L=S.layouts[id], h=histOf(id); if(!L||!h) return; const from=back?h.undo:h.redo, to=back?h.redo:h.undo; if(!from.length) return;
+  to.push(JSON.stringify(L.items||[])); L.items=JSON.parse(from.pop()); h.snap=JSON.stringify(L.items);
+  U.noHist=true; saveLayout(id); U.noHist=false; const ok=new Set(L.items.map(i=>i.uid)); U.multi=(U.multi||[]).filter(x=>ok.has(x)); if(U.sel&&!ok.has(U.sel)) U.sel=U.multi[U.multi.length-1]||null; rebuildScene(); renderLayoutPane(); }
+function saveLayout(id){ histRecord(id); S.layouts[id].updatedAt = new Date().toISOString(); writeDoc("layouts", id, S.layouts[id]); }
 
 /* ---- website cloud save (Firebase). Only used outside Claude, when firebase-config.js has a config.
    No sign-in: anyone with the link can view and edit (Roy's choice). ---- */
@@ -329,12 +336,14 @@ function renderLayoutPane(){
     h += `<div class="row"><label class="f">地面<select id="lGround">${[["none","不顯示（只有格線）"],["gravel","碎石地"],["grass","草地"],["mixed","碎石＋草地"],["color","單色"]].map(([k,n])=>`<option value="${k}" ${k===gk?"selected":""}>${n}</option>`).join("")}</select></label>${gk==="color"?`<label class="f" style="flex:0 0 72px">顏色<input type="color" id="lGroundColor" value="${esc(L.groundColor||"#8C8A80")}" style="width:100%;height:32px;border:1px solid var(--line);border-radius:6px;background:none"></label>`:""}</div>`;
     h += `<div class="row"><button class="btn" id="dupLayout">複製這張</button><button class="btn danger ${U.armed==="layout"?"armed":""}" id="delLayout">${U.armed==="layout"?"再按一次刪除":"刪除配置"}</button></div></div>`;
     const it = L.items.find(i=>i.uid===U.sel); const g = it && S.gear[it.gearId];
-    const mIds = selIds();
+    const mIds = selIds(), H=histOf(U.layoutId);
+    h += `<div class="row"><button class="btn" id="hUndo" ${H&&H.undo.length?"":"disabled"}>↶ 復原</button><button class="btn" id="hRedo" ${H&&H.redo.length?"":"disabled"}>↷ 重做</button></div>`;
     if(mIds.length>1){
       const its=selItems(), nl=its.filter(i=>i.locked).length;
-      h += `<div class="sec card"><h3>已選取 ${its.length} 件</h3><div class="mono" style="line-height:1.6">${its.map(i=>esc((S.gear[i.gearId]||{}).name||"")).join("、")}</div>
+      h += `<div class="sec card"><h3>已選取 ${its.length} 件${its.every(i=>i.grp&&i.grp===its[0].grp)?"（🔗 群組）":""}</h3><div class="mono" style="line-height:1.6">${its.map(i=>esc((S.gear[i.gearId]||{}).name||"")).join("、")}</div>
       ${nl?`<div class="help">其中 ${nl} 件已鎖定，不會跟著移動。</div>`:""}
       <div class="row"><button class="btn" id="mRot">整組轉 90°</button><button class="btn" id="mDup">複製</button><button class="btn danger" id="mDel">移除</button><button class="btn" id="mNone">取消選取</button></div>
+      <div class="row">${its.some(i=>i.grp)?`<button class="btn" id="gUngroup">✂ 解散群組 <kbd>Ctrl</kbd>+<kbd>U</kbd></button>`:""}${its.length>1&&!(its.every(i=>i.grp&&i.grp===its[0].grp))?`<button class="btn primary" id="gGroup">🔗 群組 <kbd>Ctrl</kbd>+<kbd>G</kbd></button>`:""}</div>
       <div class="row" style="flex-wrap:wrap;gap:6px"><span class="help" style="margin:0;align-self:center">複製到</span><button class="btn" data-cp="L">⬅ 左邊</button><button class="btn" data-cp="R">右邊 ➡</button><button class="btn" data-cp="U">⬆ 上面</button><button class="btn" data-cp="D">⬇ 下面</button><button class="btn" data-cp="ML">⇋ 左鏡像</button><button class="btn" data-cp="MR">⇋ 右鏡像</button></div>
       <div class="row"><button class="btn ${U.placing?"primary":""}" id="cpPlace">${U.placing?"📍 點畫面要放的位置…（再按取消）":"📍 移到點選的位置"}</button></div>
       ${Object.keys(S.layouts).length>1?`<div class="row"><label class="f">複製到其他配置圖<select id="cpLayout">${Object.entries(S.layouts).filter(([id])=>id!==U.layoutId).map(([id,l])=>`<option value="${esc(id)}">${l.kind==="tent"?"帳內｜":"營位｜"}${esc(l.name)}</option>`).join("")}</select></label><button class="btn" id="cpToLayout" style="align-self:flex-end">複製過去</button></div>`:""}
@@ -375,7 +384,15 @@ function renderLayoutPane(){
     } else h += `<div class="empty">裝備庫還沒有東西，到「裝備庫」分頁新增。</div>`;
     h += `</div>`;
     const its = L.items.filter(i=>S.gear[i.gearId]);
-    if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西；在畫面上連點兩下可以選到鎖住的物品。點名稱可以選取。</div></div>`;
+    if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${i.grp?"🔗 ":""}${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西；在畫面上連點兩下可以選到鎖住的物品。點名稱可以選取。</div></div>`;
+    h += `<div class="sec"><details><summary><strong>⌨️ 快捷鍵（仿 CorelDRAW）</strong></summary><div class="help" style="line-height:1.9">
+      <kbd>Shift</kbd>/<kbd>Ctrl</kbd>+點 加選・減選<br><kbd>Ctrl</kbd>+<kbd>A</kbd> 全選（未鎖定）・<kbd>Esc</kbd> 取消選取<br>
+      <kbd>Ctrl</kbd>+<kbd>G</kbd> 群組・<kbd>Ctrl</kbd>+<kbd>U</kbd> 解散群組<br>
+      <kbd>Ctrl</kbd>+<kbd>C</kbd> 複製・<kbd>Ctrl</kbd>+<kbd>X</kbd> 剪下・<kbd>Ctrl</kbd>+<kbd>V</kbd> 貼上（再點畫面放置）<br>
+      <kbd>Ctrl</kbd>+<kbd>D</kbd> 再製（偏移一點）・<kbd>+</kbd> 原地再製<br>
+      <kbd>Ctrl</kbd>+<kbd>Z</kbd> 復原・<kbd>Ctrl</kbd>+<kbd>Y</kbd> 重做<br>
+      <kbd>Delete</kbd> 刪除・方向鍵 微調 1 cm（<kbd>Shift</kbd>＋方向鍵 10 cm）<br>
+      <kbd>R</kbd> 轉 90°（<kbd>Shift</kbd>+<kbd>R</kbd> 轉 15°）・連點兩下 選取鎖住的物品<br>Mac 用 <kbd>⌘</kbd> 代替 <kbd>Ctrl</kbd>。</div></details></div>`;
     const counts = {}; L.items.forEach(i=>counts[i.gearId]=(counts[i.gearId]||0)+1);
     const rows = Object.entries(counts).filter(([gid])=>S.gear[gid]);
     if(rows.length) h += `<div class="sec"><h3>這張配置的清單</h3>${rows.map(([gid,n])=>`<div class="row"><span class="sw" style="background:${esc(S.gear[gid].color)}"></span><span style="flex:1">${esc(S.gear[gid].name)}</span><span class="mono">×${n}</span></div>`).join("")}</div>`;
@@ -431,12 +448,16 @@ $("#paneLayout").addEventListener("click", e => {
     if(!tgt) return; tgt.doors = tgt.doors || {}; const k=b.dataset.door; tgt.doors[k] = tgt.doors[k]==="open" ? "closed" : "open";
     saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); return; }
   if(b.dataset.lock && L){ const it=L.items.find(i=>i.uid===b.dataset.lock); if(it){ it.locked=!it.locked; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
-  if(b.dataset.pick && L){ const id=b.dataset.pick; if(U.multiMode || e.shiftKey || e.ctrlKey || e.metaKey) toggleSel(id); else if(U.sel===id && selIds().length===1) clearSel(); else { U.sel=id; U.multi=[id]; } renderLayoutPane(); rebuildScene(); return; }
+  if(b.dataset.pick && L){ const id=b.dataset.pick; if(U.multiMode || e.shiftKey || e.ctrlKey || e.metaKey) toggleSel(id); else if(U.sel===id && selIds().length===grpMembers(id).length) clearSel(); else selectOne(id); renderLayoutPane(); rebuildScene(); return; }
   if(b.dataset.ext!==undefined && L){ const it=selItem(); if(it){ it.ext=+b.dataset.ext; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); } return; }
   if(b.id==="mMode"){ U.multiMode=!U.multiMode; renderLayoutPane(); return; }
   if(b.id==="mAll" && L){ U.multi=L.items.filter(i=>!i.locked && S.gear[i.gearId]).map(i=>i.uid); U.sel=U.multi[U.multi.length-1]||null; renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="mRot") return rotateGroup(90);
   if(b.id==="mDup") return dupGroup();
+  if(b.id==="gGroup") return groupSel();
+  if(b.id==="gUngroup") return ungroupSel();
+  if(b.id==="hUndo") return histStep(true);
+  if(b.id==="hRedo") return histStep(false);
   if(b.dataset.cp) return copyTo(b.dataset.cp);
   if(b.id==="cpToLayout"){ const sel=$("#cpLayout"); if(sel) copyToLayout(sel.value); return; }
   if(b.id==="cpPlace"){ U.placing=!U.placing; renderLayoutPane(); return; }
@@ -527,14 +548,21 @@ function selIds(){ return U.sel && U.multi.includes(U.sel) && U.multi.length>1 ?
 function selItems(){ const L=curLayout(); if(!L) return []; const ids=selIds(); return L.items.filter(i=>ids.includes(i.uid)); }
 const isSel = uid => selIds().includes(uid);
 function clearSel(){ U.sel=null; U.multi=[]; U.placing=false; }
-function toggleSel(id){ let m = selIds(); if(m.includes(id)){ m=m.filter(x=>x!==id); U.multi=m; U.sel=m[m.length-1]||null; } else { m.push(id); U.multi=m; U.sel=id; } }
+/* groups: items sharing it.grp are selected, moved, copied and deleted together */
+function grpMembers(id){ const L=curLayout(); const it=L&&L.items.find(i=>i.uid===id); if(!it||!it.grp) return [id]; return L.items.filter(i=>i.grp===it.grp).map(i=>i.uid); }
+function regroup(list){ const m={}; list.forEach(c=>{ if(c.grp){ m[c.grp]=m[c.grp]||uid("g"); c.grp=m[c.grp]; } }); return list; }
+function selectOne(id){ U.multi=grpMembers(id); U.sel=id; }
+function groupSel(){ const its=selItems(); if(its.length<2) return; const g=uid("g"); its.forEach(i=>i.grp=g); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function ungroupSel(){ const its=selItems(); if(!its.some(i=>i.grp)) return; its.forEach(i=>delete i.grp); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function selectAll(){ const L=curLayout(); if(!L) return; U.multi=L.items.filter(i=>!i.locked && S.gear[i.gearId]).map(i=>i.uid); U.sel=U.multi[U.multi.length-1]||null; rebuildScene(); renderLayoutPane(); }
+function toggleSel(id){ let m = selIds(); const g=grpMembers(id); if(m.includes(id)){ m=m.filter(x=>!g.includes(x)); U.multi=m; U.sel=m[m.length-1]||null; } else { g.forEach(x=>{ if(!m.includes(x)) m.push(x); }); U.multi=m; U.sel=id; } }
 function moveSel(dx,dy){ selItems().filter(i=>!i.locked).forEach(i=>{ i.x+=dx; i.y+=dy; }); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function rotateGroup(d){ const its=selItems().filter(i=>!i.locked); if(!its.length) return; const cx=its.reduce((a,i)=>a+i.x,0)/its.length, cy=its.reduce((a,i)=>a+i.y,0)/its.length, r=d*Math.PI/180, c=Math.cos(r), sn=Math.sin(r);
   its.forEach(i=>{ const x=i.x-cx, y=i.y-cy; i.x=Math.round(cx + x*c - y*sn); i.y=Math.round(cy + x*sn + y*c); i.rot=((i.rot+d)%360+360)%360; }); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
-function dupGroup(){ const L=curLayout(); const n=selItems().map(i=>({...JSON.parse(JSON.stringify(i)), uid:uid("i"), x:i.x+30, y:i.y+30, locked:false})); n.forEach(i=>L.items.push(i)); U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function dupGroup(off=30){ const L=curLayout(); const n=regroup(selItems().map(i=>({...JSON.parse(JSON.stringify(i)), uid:uid("i"), x:i.x+off, y:i.y+off, locked:false}))); n.forEach(i=>L.items.push(i)); U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 /* copy the selection next to itself (or mirrored), keeping relative positions */
 function groupBox(its){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; its.forEach(i=>{ const g=S.gear[i.gearId]; if(!g) return; const ge=effGear(g,i), r=i.rot*Math.PI/180, hw=(Math.abs(Math.cos(r))*ge.w+Math.abs(Math.sin(r))*ge.d)/2, hd=(Math.abs(Math.sin(r))*ge.w+Math.abs(Math.cos(r))*ge.d)/2; x0=Math.min(x0,i.x-hw); x1=Math.max(x1,i.x+hw); y0=Math.min(y0,i.y-hd); y1=Math.max(y1,i.y+hd); }); return {x0,x1,y0,y1}; }
-function pasteItems(src, f){ const L=curLayout(); if(!L||!src.length) return; const n=src.map(i=>{ const c=JSON.parse(JSON.stringify(i)); c.uid=uid("i"); c.locked=false; f(c,i); c.x=Math.round(c.x); c.y=Math.round(c.y); return c; }); n.forEach(i=>L.items.push(i)); U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function pasteItems(src, f){ const L=curLayout(); if(!L||!src.length) return; const n=src.map(i=>{ const c=JSON.parse(JSON.stringify(i)); c.uid=uid("i"); c.locked=false; f(c,i); c.x=Math.round(c.x); c.y=Math.round(c.y); return c; }); regroup(n); n.forEach(i=>L.items.push(i)); U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function copyTo(dir){ const its=selItems(); if(!its.length) return; const b=groupBox(its), gap=50, W=b.x1-b.x0+gap, D=b.y1-b.y0+gap;
   if(dir==="ML"||dir==="MR"){ const ax = dir==="MR" ? b.x1+gap/2 : b.x0-gap/2; return pasteItems(its,(c,i)=>{ c.x=2*ax-i.x; c.rot=((360-i.rot)%360+360)%360; if(c.tent&&c.tent.doors){ const d=c.tent.doors, m={}; Object.keys(d).forEach(k=>{ const k2=k.replace(/^L/,"\u0001").replace(/^R/,"L").replace(/^\u0001/,"R"); m[k2]=d[k]; }); c.tent.doors=m; } }); }
   const dx = dir==="L"?-W:dir==="R"?W:0, dy = dir==="U"?-D:dir==="D"?D:0;
@@ -543,17 +571,26 @@ function copyTo(dir){ const its=selItems(); if(!its.length) return; const b=grou
 function copyToLayout(tid){ const T=S.layouts[tid], its=selItems(); if(!T||!its.length) return;
   const bx=groupBox(its), lim=layoutBounds(T);
   let dx=0, dy=0; if((bx.x0<lim.x0 || bx.x1>lim.x1 || bx.y0<lim.z0 || bx.y1>lim.z1)){ dx=(lim.x0+lim.x1)/2-(bx.x0+bx.x1)/2; dy=(lim.z0+lim.z1)/2-(bx.y0+bx.y1)/2; }
-  const n=its.map(i=>{ const c=JSON.parse(JSON.stringify(i)); c.uid=uid("i"); c.locked=false; c.x=Math.round(i.x+dx); c.y=Math.round(i.y+dy); return c; });
+  const n=its.map(i=>{ const c=JSON.parse(JSON.stringify(i)); c.uid=uid("i"); c.locked=false; c.x=Math.round(i.x+dx); c.y=Math.round(i.y+dy); return c; }); regroup(n); histOf(tid);
   T.items=(T.items||[]).concat(n); saveLayout(tid);
   U.layoutId=tid; U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; U.armed=null; saveUI(); renderAll(); fitView(); }
 function placeSelAt(p){ const its=selItems().filter(i=>!i.locked); if(!its.length) return; const b=groupBox(its), cx=(b.x0+b.x1)/2, cy=(b.y0+b.y1)/2; its.forEach(i=>{ i.x=snapV(i.x+p.x-cx,5); i.y=snapV(i.y+p.z-cy,5); }); U.placing=false; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function delGroup(){ const L=curLayout(); const ids=selIds(); L.items=L.items.filter(i=>!ids.includes(i.uid)); clearSel(); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function rotateSel(d){ const it=selItem(); if(!it||it.locked) return; it.rot=((it.rot+d)%360+360)%360; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
-function dupSel(){ const it=selItem(); if(!it) return; const n={...it, uid:uid("i"), x:it.x+20, y:it.y+20}; curLayout().items.push(n); U.sel=n.uid; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function dupSel(){ const it=selItem(); if(!it) return; const n={...JSON.parse(JSON.stringify(it)), uid:uid("i"), x:it.x+20, y:it.y+20, locked:false}; delete n.grp; curLayout().items.push(n); U.sel=n.uid; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function delSel(){ const L=curLayout(); if(!L||!U.sel) return; L.items=L.items.filter(i=>i.uid!==U.sel); U.sel=null; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 document.addEventListener("keydown", e => {
   if(e.target.closest("input,select,textarea")) return; if(U.tab!=="layout") return;
   if(isFP()) return;
+  const mod=e.ctrlKey||e.metaKey, k=(e.key||"").toLowerCase();
+  if(mod && k==="z" && !e.shiftKey){ histStep(true); e.preventDefault(); return; }
+  if(mod && (k==="y" || (k==="z" && e.shiftKey))){ histStep(false); e.preventDefault(); return; }
+  if(mod && k==="a"){ selectAll(); e.preventDefault(); return; }
+  if(mod && k==="g"){ groupSel(); e.preventDefault(); return; }
+  if(mod && k==="u"){ ungroupSel(); e.preventDefault(); return; }
+  if(mod && k==="d" && selItems().length){ dupGroup(); e.preventDefault(); return; }
+  if(!mod && (e.key==="+" || e.code==="NumpadAdd") && selItems().length){ dupGroup(0); e.preventDefault(); return; }
+  if(mod && k==="x" && selItems().length){ U.clip=JSON.parse(JSON.stringify(selItems())); delGroup(); e.preventDefault(); return; }
   if((e.ctrlKey||e.metaKey) && (e.key==="c"||e.key==="C") && selItems().length){ U.clip=JSON.parse(JSON.stringify(selItems())); e.preventDefault(); return; }
   if((e.ctrlKey||e.metaKey) && (e.key==="v"||e.key==="V") && U.clip && U.clip.length){ pasteItems(U.clip,(c,i)=>{ c.x=i.x+50; c.y=i.y+50; }); U.placing=true; renderLayoutPane(); e.preventDefault(); return; }
   if(e.key==="Escape" && U.placing){ U.placing=false; renderLayoutPane(); return; }
@@ -785,6 +822,7 @@ function groundTexture(kind){
   return (groundCache[kind] = t);
 }
 function rebuildScene(){
+  if(U.layoutId && S.layouts[U.layoutId]) histOf(U.layoutId);
   while(world.children.length) world.remove(world.children[0]);
   fires = []; screensOn = 0; ytWanted = []; smokes = []; hotBubbles = [];
   itemGroups = {}; $("#labels").innerHTML = ""; labelEls = {};
@@ -1003,7 +1041,7 @@ renderer.domElement.addEventListener("pointerdown", e => {
     const it = curLayout().items.find(i=>i.uid===id); const p = groundPt();
     const additive = e.shiftKey || e.ctrlKey || e.metaKey || U.multiMode;
     if(additive){ const had=isSel(id); toggleSel(id); rebuildScene(); renderLayoutPane(); if(had){ e.stopImmediatePropagation(); e.preventDefault(); return; } }
-    else if(!isSel(id)){ U.sel=id; U.multi=[id]; rebuildScene(); renderLayoutPane(); }
+    else if(!isSel(id)){ selectOne(id); rebuildScene(); renderLayoutPane(); }
     else if(U.sel!==id){ U.sel=id; }
     const others = selItems().filter(i=>i!==it && !i.locked).map(i=>({it:i, dx:i.x-it.x, dy:i.y-it.y}));
     drag = {it, ox: p? it.x-p.x:0, oz: p? it.y-p.z:0, moved:false, pid:e.pointerId, others};
@@ -1017,7 +1055,7 @@ let downEmpty = null;
 renderer.domElement.addEventListener("dblclick", e => {
   if(isFP() || U.tab!=="layout" || !curLayout() || U.placing) return;
   setNdc(e); const id = pickItem(true); if(!id) return;
-  if(e.shiftKey || e.ctrlKey || e.metaKey || U.multiMode){ if(!isSel(id)) toggleSel(id); } else { U.sel=id; U.multi=[id]; }
+  if(e.shiftKey || e.ctrlKey || e.metaKey || U.multiMode){ if(!isSel(id)) toggleSel(id); } else selectOne(id);
   downEmpty=null; rebuildScene(); renderLayoutPane(); e.preventDefault();
 });
 renderer.domElement.addEventListener("pointermove", e => {
