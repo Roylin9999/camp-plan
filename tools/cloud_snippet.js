@@ -3,7 +3,9 @@ async function fbInit(){
   if(!(window.FB_CONFIG && window.FB_CONFIG.apiKey && window.firebase)) return null;
   try{
     firebase.initializeApp(window.FB_CONFIG);
-    const fs = firebase.firestore(), auth = firebase.auth();
+    const raw = firebase.firestore(), auth = firebase.auth();
+    /* all data lives in collections named campplan_* so the Firebase project can be shared with other apps */
+    const fs = { collection: c => raw.collection("campplan_" + c), batch: () => raw.batch() };
     await new Promise(r => { const off = auth.onAuthStateChanged(() => { off(); r(); }); });
     auth.getRedirectResult().catch(()=>{});
     const ui = () => {
