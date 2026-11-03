@@ -335,6 +335,9 @@ function renderLayoutPane(){
       h += `<div class="sec card"><h3>已選取 ${its.length} 件</h3><div class="mono" style="line-height:1.6">${its.map(i=>esc((S.gear[i.gearId]||{}).name||"")).join("、")}</div>
       ${nl?`<div class="help">其中 ${nl} 件已鎖定，不會跟著移動。</div>`:""}
       <div class="row"><button class="btn" id="mRot">整組轉 90°</button><button class="btn" id="mDup">複製</button><button class="btn danger" id="mDel">移除</button><button class="btn" id="mNone">取消選取</button></div>
+      <div class="row" style="flex-wrap:wrap;gap:6px"><span class="help" style="margin:0;align-self:center">複製到</span><button class="btn" data-cp="L">⬅ 左邊</button><button class="btn" data-cp="R">右邊 ➡</button><button class="btn" data-cp="U">⬆ 上面</button><button class="btn" data-cp="D">⬇ 下面</button><button class="btn" data-cp="ML">⇋ 左鏡像</button><button class="btn" data-cp="MR">⇋ 右鏡像</button></div>
+      <div class="row"><button class="btn ${U.placing?"primary":""}" id="cpPlace">${U.placing?"📍 點畫面要放的位置…（再按取消）":"📍 移到點選的位置"}</button></div>
+      <div class="help">「複製到」會照原本的相對位置複製一份放在旁邊，「鏡像」會左右翻轉排列方向。複製出來的那份會自動選取，可以直接拖曳整組，或按「📍」再點畫面放到指定位置。快捷鍵：<kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd>。</div>
       <div class="help">拖曳其中一件，整組會一起移動。方向鍵一起微調、<kbd>R</kbd> 整組轉向、<kbd>Esc</kbd> 取消。</div></div>`;
     } else if(it && g){
       const ge = effGear(g, it);
@@ -355,6 +358,9 @@ function renderLayoutPane(){
       <div class="row"><button class="btn ${it.locked?"primary":""}" id="iLock">${it.locked?"🔒 已鎖定（按此解鎖）":"🔓 鎖定位置"}</button></div>
       ${it.locked?`<div class="help">鎖定中：不能拖曳、轉向或微調，點畫面時會直接穿過它，選到裡面的東西。要解鎖可以在下方「物品清單」點它。</div>`:""}
       <div class="row"><button class="btn" id="iRot" ${it.locked?"disabled":""}>轉 90°</button><button class="btn" id="iDup">複製</button><button class="btn danger" id="iDel">移除</button></div>
+      <div class="row" style="flex-wrap:wrap;gap:6px"><span class="help" style="margin:0;align-self:center">複製到</span><button class="btn" data-cp="L">⬅ 左邊</button><button class="btn" data-cp="R">右邊 ➡</button><button class="btn" data-cp="U">⬆ 上面</button><button class="btn" data-cp="D">⬇ 下面</button><button class="btn" data-cp="ML">⇋ 左鏡像</button><button class="btn" data-cp="MR">⇋ 右鏡像</button></div>
+      <div class="row"><button class="btn ${U.placing?"primary":""}" id="cpPlace">${U.placing?"📍 點畫面要放的位置…（再按取消）":"📍 移到點選的位置"}</button></div>
+      <div class="help">「複製到」會照原本的相對位置複製一份放在旁邊，「鏡像」會左右翻轉排列方向。複製出來的那份會自動選取，可以直接拖曳整組，或按「📍」再點畫面放到指定位置。快捷鍵：<kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd>。</div>
       <div class="help">X、Y 是物品中心點，距離${L.kind==="tent"?"帳篷":"營位"}左上角。<kbd>R</kbd> 轉 90°、<kbd>Shift</kbd>+<kbd>R</kbd> 轉 15°、方向鍵微調 1cm、<kbd>Del</kbd> 移除。</div></div>`;
     }
     h += `<div class="sec"><h3>放入裝備</h3>`;
@@ -429,6 +435,8 @@ $("#paneLayout").addEventListener("click", e => {
   if(b.id==="mAll" && L){ U.multi=L.items.filter(i=>!i.locked && S.gear[i.gearId]).map(i=>i.uid); U.sel=U.multi[U.multi.length-1]||null; renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="mRot") return rotateGroup(90);
   if(b.id==="mDup") return dupGroup();
+  if(b.dataset.cp) return copyTo(b.dataset.cp);
+  if(b.id==="cpPlace"){ U.placing=!U.placing; renderLayoutPane(); return; }
   if(b.id==="mDel") return delGroup();
   if(b.id==="mNone"){ clearSel(); renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="iYTSound"){ ytMuted=!ytMuted; ytCmd(ytMuted?"mute":"unMute"); ytCmd("playVideo"); renderLayoutPane(); return; }
@@ -515,12 +523,20 @@ function selItem(){ const L=curLayout(); return L && L.items.find(i=>i.uid===U.s
 function selIds(){ return U.sel && U.multi.includes(U.sel) && U.multi.length>1 ? U.multi.slice() : (U.sel ? [U.sel] : []); }
 function selItems(){ const L=curLayout(); if(!L) return []; const ids=selIds(); return L.items.filter(i=>ids.includes(i.uid)); }
 const isSel = uid => selIds().includes(uid);
-function clearSel(){ U.sel=null; U.multi=[]; }
+function clearSel(){ U.sel=null; U.multi=[]; U.placing=false; }
 function toggleSel(id){ let m = selIds(); if(m.includes(id)){ m=m.filter(x=>x!==id); U.multi=m; U.sel=m[m.length-1]||null; } else { m.push(id); U.multi=m; U.sel=id; } }
 function moveSel(dx,dy){ selItems().filter(i=>!i.locked).forEach(i=>{ i.x+=dx; i.y+=dy; }); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function rotateGroup(d){ const its=selItems().filter(i=>!i.locked); if(!its.length) return; const cx=its.reduce((a,i)=>a+i.x,0)/its.length, cy=its.reduce((a,i)=>a+i.y,0)/its.length, r=d*Math.PI/180, c=Math.cos(r), sn=Math.sin(r);
   its.forEach(i=>{ const x=i.x-cx, y=i.y-cy; i.x=Math.round(cx + x*c - y*sn); i.y=Math.round(cy + x*sn + y*c); i.rot=((i.rot+d)%360+360)%360; }); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function dupGroup(){ const L=curLayout(); const n=selItems().map(i=>({...JSON.parse(JSON.stringify(i)), uid:uid("i"), x:i.x+30, y:i.y+30, locked:false})); n.forEach(i=>L.items.push(i)); U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+/* copy the selection next to itself (or mirrored), keeping relative positions */
+function groupBox(its){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; its.forEach(i=>{ const g=S.gear[i.gearId]; if(!g) return; const ge=effGear(g,i), r=i.rot*Math.PI/180, hw=(Math.abs(Math.cos(r))*ge.w+Math.abs(Math.sin(r))*ge.d)/2, hd=(Math.abs(Math.sin(r))*ge.w+Math.abs(Math.cos(r))*ge.d)/2; x0=Math.min(x0,i.x-hw); x1=Math.max(x1,i.x+hw); y0=Math.min(y0,i.y-hd); y1=Math.max(y1,i.y+hd); }); return {x0,x1,y0,y1}; }
+function pasteItems(src, f){ const L=curLayout(); if(!L||!src.length) return; const n=src.map(i=>{ const c=JSON.parse(JSON.stringify(i)); c.uid=uid("i"); c.locked=false; f(c,i); c.x=Math.round(c.x); c.y=Math.round(c.y); return c; }); n.forEach(i=>L.items.push(i)); U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function copyTo(dir){ const its=selItems(); if(!its.length) return; const b=groupBox(its), gap=50, W=b.x1-b.x0+gap, D=b.y1-b.y0+gap;
+  if(dir==="ML"||dir==="MR"){ const ax = dir==="MR" ? b.x1+gap/2 : b.x0-gap/2; return pasteItems(its,(c,i)=>{ c.x=2*ax-i.x; c.rot=((360-i.rot)%360+360)%360; if(c.tent&&c.tent.doors){ const d=c.tent.doors, m={}; Object.keys(d).forEach(k=>{ const k2=k.replace(/^L/,"\u0001").replace(/^R/,"L").replace(/^\u0001/,"R"); m[k2]=d[k]; }); c.tent.doors=m; } }); }
+  const dx = dir==="L"?-W:dir==="R"?W:0, dy = dir==="U"?-D:dir==="D"?D:0;
+  pasteItems(its,(c,i)=>{ c.x=i.x+dx; c.y=i.y+dy; }); }
+function placeSelAt(p){ const its=selItems().filter(i=>!i.locked); if(!its.length) return; const b=groupBox(its), cx=(b.x0+b.x1)/2, cy=(b.y0+b.y1)/2; its.forEach(i=>{ i.x=snapV(i.x+p.x-cx,5); i.y=snapV(i.y+p.z-cy,5); }); U.placing=false; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function delGroup(){ const L=curLayout(); const ids=selIds(); L.items=L.items.filter(i=>!ids.includes(i.uid)); clearSel(); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function rotateSel(d){ const it=selItem(); if(!it||it.locked) return; it.rot=((it.rot+d)%360+360)%360; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function dupSel(){ const it=selItem(); if(!it) return; const n={...it, uid:uid("i"), x:it.x+20, y:it.y+20}; curLayout().items.push(n); U.sel=n.uid; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
@@ -528,6 +544,9 @@ function delSel(){ const L=curLayout(); if(!L||!U.sel) return; L.items=L.items.f
 document.addEventListener("keydown", e => {
   if(e.target.closest("input,select,textarea")) return; if(U.tab!=="layout") return;
   if(isFP()) return;
+  if((e.ctrlKey||e.metaKey) && (e.key==="c"||e.key==="C") && selItems().length){ U.clip=JSON.parse(JSON.stringify(selItems())); e.preventDefault(); return; }
+  if((e.ctrlKey||e.metaKey) && (e.key==="v"||e.key==="V") && U.clip && U.clip.length){ pasteItems(U.clip,(c,i)=>{ c.x=i.x+50; c.y=i.y+50; }); U.placing=true; renderLayoutPane(); e.preventDefault(); return; }
+  if(e.key==="Escape" && U.placing){ U.placing=false; renderLayoutPane(); return; }
   const it = selItem(); if(!it) return;
   const step = e.shiftKey ? 10 : 1;
   if(selIds().length>1){
@@ -572,6 +591,13 @@ function footprint(g){
     if(cx>0||cy>0) return [[-w+cx,-d],[w-cx,-d],[w,-d+cy],[w,d-cy],[w-cx,d],[-w+cx,d],[-w,d-cy],[-w,-d+cy]]; }
   if(g.shape==="cylinder"||g.shape==="tree"){ const pts=[]; for(let i=0;i<40;i++){ const a=i/40*Math.PI*2; pts.push([Math.cos(a)*w, Math.sin(a)*d]); } return pts; }
   return [[-w,-d],[w,-d],[w,d],[-w,d]];
+}
+/* bright ground halo under a selected item, drawn on top so it shows even under canopies or when locked */
+function selHalo(g){
+  const fp=footprint(g), outer=fp.map(([x,z])=>{ const L=Math.hypot(x,z)||1, off=Math.max(12, 60-L); return [x+x/L*off, z+z/L*off]; });
+  const shp=new THREE.Shape(outer.map(([x,z])=>new THREE.Vector2(x,-z))); shp.holes.push(new THREE.Path(fp.map(([x,z])=>new THREE.Vector2(x,-z))));
+  const m=new THREE.Mesh(new THREE.ShapeGeometry(shp), new THREE.MeshBasicMaterial({color:"#FFD23F", transparent:true, opacity:.9, depthTest:false, depthWrite:false, side:THREE.DoubleSide}));
+  m.rotation.x=-Math.PI/2; m.position.y=2; m.renderOrder=20; m.userData.noPick=true; return m;
 }
 function lineLoop(pts, y, color, opacity=1){
   const arr=[]; pts.forEach(([x,z])=>arr.push(x,y,z)); arr.push(pts[0][0],y,pts[0][1]);
@@ -670,8 +696,8 @@ function gearMesh(g, selected, opts){
       const armL=Math.max(10,sd+r*2);
       [-1,1].forEach(sgn=>{ const a=new THREE.Mesh(new THREE.CylinderGeometry(r,r,armL,24), mat); a.rotation.x=Math.PI/2; a.position.set(sgn*(w/2-r),base+r,d/2-armL/2); grp.add(a); });
       break; }
-    case "tree": { const tr=new THREE.Mesh(new THREE.CylinderGeometry(w/2*0.8,w/2,h,20), new THREE.MeshStandardMaterial({color:"#6B5544",roughness:.95})); tr.position.y=h/2; grp.add(tr);
-      const cr=Math.max(120,w*3); const cn=new THREE.Mesh(new THREE.ConeGeometry(cr,h*0.5,16), new THREE.MeshStandardMaterial({color:g.color||"#3F6B45",roughness:.9,transparent:true,opacity:.55,depthWrite:false})); cn.position.y=h*0.72; cn.userData.noPick=true; grp.add(cn); break; }
+    case "tree": { const tr=new THREE.Mesh(new THREE.CylinderGeometry(w/2*0.8,w/2,h,20), new THREE.MeshStandardMaterial({color:"#6B5544",roughness:.95, emissive: selected? 0xFFC107 : 0x000000, emissiveIntensity: selected? .55:0})); tr.position.y=h/2; grp.add(tr);
+      const cr=Math.max(120,w*3); const cn=new THREE.Mesh(new THREE.ConeGeometry(cr,h*0.5,16), new THREE.MeshStandardMaterial({color: selected? "#E8C547" : (g.color||"#3F6B45"),roughness:.9,transparent:true,opacity: selected? .7:.55,depthWrite:false, emissive: selected? 0x8a6a00 : 0x000000})); cn.position.y=h*0.72; cn.userData.noPick=true; grp.add(cn); break; }
     case "hotpot": { const steel=new THREE.MeshStandardMaterial({color:col, roughness:.35, metalness:.25, emissive: selected? new THREE.Color(cssVar("--hi")) : 0x000000, emissiveIntensity: selected? .3:0});
       const R=w/2, ph=h*0.62, bh=h-ph;
       const burner=new THREE.Mesh(new THREE.CylinderGeometry(R*0.85,R*0.9,bh,32), new THREE.MeshStandardMaterial({color:"#2a2a2a", roughness:.6, metalness:.4})); burner.position.y=bh/2; grp.add(burner);
@@ -779,7 +805,7 @@ function rebuildScene(){
     }
   }
   L.items.forEach(it => { const g0=S.gear[it.gearId]; if(!g0) return; const g=effGear(g0, it);
-    const grp = gearMesh(g, isSel(it.uid), it.tent); grp.position.set(it.x,it.elev||0,it.y); grp.rotation.y = -it.rot*Math.PI/180;
+    const grp = gearMesh(g, isSel(it.uid), it.tent); grp.position.set(it.x,it.elev||0,it.y); grp.rotation.y = -it.rot*Math.PI/180; if(isSel(it.uid)){ const hl=selHalo(g); hl.position.y=2-(it.elev||0); grp.add(hl); }
     grp.userData.uid = it.uid; world.add(grp); itemGroups[it.uid]=grp;
     if(it.stand && g.stand){ grp.children.forEach(c=>c.position.y+=STAND_H); grp.add(makeStand(g)); }
     if(it.fire && isPit(g)){ grp.add(makeFire(g)); if(it.fire==="smoke") grp.add(makeSmoke({y0:g.h+Math.min(g.w,g.d)*0.9, r:Math.min(g.w,g.d)*0.3, rise:420, size:[22,140], count:26, period:6.5, color:"#8a8a8a", alpha:.42, drift:60})); }
@@ -961,6 +987,7 @@ function pickItem(){
 renderer.domElement.addEventListener("pointerdown", e => {
   if(isFP()){ FP.look={x:e.clientX, y:e.clientY, yaw:FP.yaw, pitch:FP.pitch}; renderer.domElement.setPointerCapture(e.pointerId); e.stopImmediatePropagation(); e.preventDefault(); return; }
   if(U.tab!=="layout" || !curLayout() || e.button!==0) return;
+  if(U.placing){ setNdc(e); const p=groundPt(); if(p) placeSelAt(p); else { U.placing=false; renderLayoutPane(); } e.stopImmediatePropagation(); e.preventDefault(); return; }
   setNdc(e); const id = pickItem();
   if(id){
     const it = curLayout().items.find(i=>i.uid===id); const p = groundPt();
