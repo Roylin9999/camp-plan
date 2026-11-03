@@ -1,5 +1,5 @@
 {
- "seedVersion": 3,
+ "seedVersion": 4,
  "gear": {
   "g_foldbox55": {
    "cat": "收納",
@@ -290,6 +290,16 @@
    "notes": "營區右側小屋，尺寸估計",
    "shape": "box",
    "w": 250
+  },
+  "g_hotpot": {
+   "cat": "廚房",
+   "color": "#C9CCD0",
+   "d": 32,
+   "h": 22,
+   "name": "火鍋（鴛鴦鍋）",
+   "notes": "32cm 鴛鴦鍋放在卡式爐上（尺寸為估計）。放在桌上時，在配置圖的「離地高度」填桌高。選取後按「開火煮滾」會冒泡冒煙",
+   "shape": "hotpot",
+   "w": 32
   }
  },
  "layouts": {

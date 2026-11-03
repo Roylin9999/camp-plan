@@ -60,7 +60,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .sw{width:12px;height:12px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.15)}
 .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted)}
 .glist{display:flex;flex-direction:column}
-.gitem{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:4px}
+.rnBtn{border:0;background:none;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;opacity:.55}.rnBtn:hover{opacity:1;background:var(--panel)}
+.rnIn{min-width:0;width:100%;font:inherit;padding:3px 6px;border:1px solid var(--accent);border-radius:4px;background:var(--bg);color:inherit}
+.gitem{display:grid;grid-template-columns:14px 1fr auto auto;gap:8px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:4px}
 .gitem:hover{background:var(--bg)}
 .gitem[aria-current="true"]{background:var(--bg);box-shadow:inset 3px 0 0 var(--hi)}
 .gitem .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -183,7 +185,7 @@ const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = p => p + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const CATS = ["帳篷","車輛","寢具","桌椅","廚房","焚火","照明","影音","收納","環境","其他"];
-const SHAPES = {box:"方塊",table:"桌子",chair:"椅子",mattress:"床墊／睡墊",cot:"高腳床（充氣床＋床架）",sofa:"沙發（座墊＋靠背＋扶手）",cylinder:"圓柱（焚火台、水桶）",tree:"樹木（寬＝樹幹直徑）",screen:"投影布幕（寬＝含支架總寬）",slattable:"木條桌（可延伸）",tent:"帳篷"};
+const SHAPES = {box:"方塊",table:"桌子",chair:"椅子",mattress:"床墊／睡墊",cot:"高腳床（充氣床＋床架）",sofa:"沙發（座墊＋靠背＋扶手）",cylinder:"圓柱（焚火台、水桶）",tree:"樹木（寬＝樹幹直徑）",screen:"投影布幕（寬＝含支架總寬）",slattable:"木條桌（可延伸）",hotpot:"火鍋（含卡式爐）",tent:"帳篷"};
 
 /* ---------------- data store: cloud db when available, otherwise this browser ---------------- */
 const S = { gear:{}, layouts:{}, mode:"local", db:null, ready:false };
@@ -241,7 +243,9 @@ async function fbSyncSeed(fs){
   const gearSnap = await fs.collection("gear").get(), laySnap = await fs.collection("layouts").get();
   let loc = {}; try{ loc = JSON.parse(localStorage.getItem("campplan.v1")||"{}"); }catch(e){}
   const writes = [];
-  Object.entries(j.gear||{}).forEach(([k,v]) => writes.push(["gear",k,v]));
+  /* only add gear the cloud doesn't have, so names or sizes people changed on the site are never overwritten */
+  const haveGear = new Set(gearSnap.docs.map(d=>d.id));
+  Object.entries(j.gear||{}).forEach(([k,v]) => { if(!haveGear.has(k)) writes.push(["gear",k,v]); });
   if(gearSnap.empty) Object.entries(loc.gear||{}).forEach(([k,v]) => { if(!(j.gear||{})[k]) writes.push(["gear",k,v]); });
   const have = new Set(laySnap.docs.map(d=>d.id));
   const lays = laySnap.empty ? {...(j.layouts||{}), ...(loc.layouts||{})} : (j.layouts||{});
@@ -338,6 +342,7 @@ function renderLayoutPane(){
       <div class="mono">寬 ${ge.w} × 深 ${g.d} × 高 ${g.h} cm</div>
       ${Array.isArray(g.ext)&&g.ext.length?`<div class="sec"><h3>桌面長度</h3><div class="chips">${g.ext.map((L2,k)=>`<button class="chip" data-ext="${k}" aria-pressed="${(it.ext||0)===k}">${k===0?"收起":k+" 節"} ${L2} cm</button>`).join("")}</div></div>`:""}
       <div class="row"><label class="f">X cm<input type="number" id="iX" step="1" value="${Math.round(it.x)}" ${it.locked?"disabled":""}></label><label class="f">Y cm<input type="number" id="iY" step="1" value="${Math.round(it.y)}" ${it.locked?"disabled":""}></label><label class="f">旋轉°<input type="number" id="iR" step="15" value="${Math.round(it.rot)}" ${it.locked?"disabled":""}></label></div>
+      <div class="row"><label class="f">離地高度 cm（放在桌上時填桌高）<input type="number" id="iElev" min="0" step="1" value="${Math.round(it.elev||0)}" ${it.locked?"disabled":""}></label></div>
       ${g.shape==="tent" && g.model ? doorUI(it.tent, "item", g) : ""}
       ${g.stand?`<div class="row"><label class="f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="iStand" ${it.stand?"checked":""}> 放在鋁合金支架上（高 ${STAND_H} cm）</label></div>`:""}
       ${g.shape==="screen"?`<div class="row"><button class="btn ${it.on?"primary":""}" id="iScreen">${it.on?"⏹ 播放中（按此關閉）":"▶ 打開布幕播電影"}</button></div>
@@ -345,7 +350,8 @@ function renderLayoutPane(){
       ${it.on && ytId(it.yt!==undefined?it.yt:g.yt) ? `<div class="row"><button class="btn" id="iYTSound">${ytMuted?"🔇 開聲音":"🔊 靜音"}</button></div>` : ""}
       <label class="f">YouTube 連結<input type="text" id="iYT" placeholder="貼上 YouTube 網址" value="${esc(it.yt!==undefined?it.yt:(g.yt?"https://youtu.be/"+g.yt:""))}"></label>
       <div class="help">有 YouTube 連結時，布幕會播那部影片（先靜音自動播放，按上面的按鈕開聲音）。清空連結會改播動畫。也可以選電腦裡的影片檔，影片檔不會上傳，重新整理後要再選一次。</div>`:""}
-      ${g.cat==="焚火"?`<div class="row"><button class="btn ${it.fire?"primary":""}" id="iFire">${it.fire?"🔥 燃燒中（按此熄火）":"🪵 點火"}</button></div>`:""}
+      ${isPit(g)?`<div class="sec"><h3>焚火台</h3><div class="chips">${[["off","🪵 熄火"],["fire","🔥 火"],["smoke","🔥💨 火＋煙"]].map(([k,n])=>`<button class="chip" data-fire="${k}" aria-pressed="${fireMode(it)===k}">${n}</button>`).join("")}</div></div>`:""}
+      ${g.shape==="hotpot"?`<div class="row"><button class="btn ${it.boil?"primary":""}" id="iBoil">${it.boil?"♨️ 煮滾中（按此關火）":"🍲 開火煮滾"}</button></div>`:""}
       <div class="row"><button class="btn ${it.locked?"primary":""}" id="iLock">${it.locked?"🔒 已鎖定（按此解鎖）":"🔓 鎖定位置"}</button></div>
       ${it.locked?`<div class="help">鎖定中：不能拖曳、轉向或微調，點畫面時會直接穿過它，選到裡面的東西。要解鎖可以在下方「物品清單」點它。</div>`:""}
       <div class="row"><button class="btn" id="iRot" ${it.locked?"disabled":""}>轉 90°</button><button class="btn" id="iDup">複製</button><button class="btn danger" id="iDel">移除</button></div>
@@ -373,7 +379,7 @@ function renderGearPane(){
   const P = $("#paneGear"); const gl = gearList();
   let h = `<div class="sec"><div class="row"><h3 style="flex:1">我的裝備（${gl.length}）</h3><button class="btn primary" id="gNew">＋ 新增裝備</button></div>`;
   if(!gl.length) h += `<div class="empty">還沒有裝備。按「新增裝備」，輸入實際的寬、深、高（公分），就會產生等比例的 3D 模型。</div>`;
-  h += `<div class="glist">` + gl.map(([id,g])=>`<div class="gitem" data-g="${esc(id)}" aria-current="${id===U.gearSel}" tabindex="0"><span class="sw" style="background:${esc(g.color)}"></span><span class="nm">${esc(g.name)}</span><span class="mono">${dimsTxt(g)}</span></div>`).join("") + `</div></div>`;
+  h += `<div class="glist">` + gl.map(([id,g])=>`<div class="gitem" data-g="${esc(id)}" aria-current="${id===U.gearSel}" tabindex="0"><span class="sw" style="background:${esc(g.color)}"></span>${U.renaming===id?`<input class="rnIn" data-rn="${esc(id)}" value="${esc(g.name)}" aria-label="新名稱">`:`<span class="nm">${esc(g.name)}</span>`}<span class="mono">${dimsTxt(g)}</span><button class="rnBtn" data-rename="${esc(id)}" title="改名字" aria-label="幫 ${esc(g.name)} 改名字">✏️</button></div>`).join("") + `</div></div>`;
   const g = S.gear[U.gearSel];
   if(g){
     h += `<div class="sec card"><h3>編輯裝備</h3>
@@ -428,7 +434,8 @@ $("#paneLayout").addEventListener("click", e => {
   if(b.id==="iYTSound"){ ytMuted=!ytMuted; ytCmd(ytMuted?"mute":"unMute"); ytCmd("playVideo"); renderLayoutPane(); return; }
   if(b.id==="iScreen"){ const it=selItem(); if(it){ it.on=!it.on; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iMute" && movieVideo){ movieVideo.muted=!movieVideo.muted; if(!movieVideo.paused||screensOn) movieVideo.play().catch(()=>{}); renderLayoutPane(); return; }
-  if(b.id==="iFire"){ const it=selItem(); if(it){ it.fire=!it.fire; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
+  if(b.dataset.fire && L){ const it=selItem(); if(it){ const k=b.dataset.fire; it.fire = k==="off" ? false : k==="smoke" ? "smoke" : true; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
+  if(b.id==="iBoil"){ const it=selItem(); if(it){ it.boil=!it.boil; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iLock"){ const it=selItem(); if(it){ it.locked=!it.locked; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iRot") return rotateSel(90);
   if(b.id==="iDup") return dupSel();
@@ -436,6 +443,7 @@ $("#paneLayout").addEventListener("click", e => {
 });
 $("#paneLayout").addEventListener("change", e => {
   const t = e.target; const L = curLayout();
+  if(t.id==="iElev"){ const it=L.items.find(i=>i.uid===U.sel); if(it){ it.elev=Math.max(0,+t.value||0); saveLayout(U.layoutId); rebuildScene(); } return; }
   if(t.id==="iYT"){ const it=L.items.find(i=>i.uid===U.sel); if(it){ it.yt=t.value.trim(); saveLayout(U.layoutId); rebuildScene(); } return; }
   if(t.id==="iStand"){ const it=L.items.find(i=>i.uid===U.sel); if(it){ it.stand=t.checked; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); } return; }
   if(t.id==="iMovie" && t.files[0]){ setMovieFile(t.files[0]); return; }
@@ -451,6 +459,9 @@ $("#paneLayout").addEventListener("change", e => {
 });
 
 $("#paneGear").addEventListener("click", e => {
+  const rb = e.target.closest("[data-rename]");
+  if(rb){ U.renaming=rb.dataset.rename; renderGearPane(); const i=$(".rnIn"); if(i){ i.focus(); i.select(); } return; }
+  if(e.target.closest(".rnIn")) return;
   const row = e.target.closest("[data-g]");
   if(row){ U.gearSel=row.dataset.g; U.armed=null; renderGearPane(); rebuildScene(); updateOverlay(); fitView(); setTimeout(()=>{ const n=$("#gName"); if(n) n.scrollIntoView({behavior:"smooth",block:"center"}); },0); return; }
   const b = e.target.closest("button"); if(!b) return;
@@ -461,6 +472,9 @@ $("#paneGear").addEventListener("click", e => {
     Object.entries(S.layouts).forEach(([lid,L])=>{ const n=L.items.length; L.items=L.items.filter(i=>i.gearId!==id); if(L.items.length!==n) saveLayout(lid); });
     U.gearSel=null; U.armed=null; renderAll(); }
 });
+function finishRename(inp, save){ const id=inp.dataset.rn, g=S.gear[id]; U.renaming=null; if(save && g){ const v=inp.value.trim(); if(v && v!==g.name){ g.name=v; saveGear(id); renderLayoutPane(); rebuildScene(); } } renderGearPane(); }
+$("#paneGear").addEventListener("keydown", e => { if(e.target.classList && e.target.classList.contains("rnIn")){ if(e.key==="Enter"){ e.preventDefault(); finishRename(e.target,true); } else if(e.key==="Escape"){ finishRename(e.target,false); } e.stopPropagation(); return; } });
+$("#paneGear").addEventListener("focusout", e => { if(e.target.classList && e.target.classList.contains("rnIn") && U.renaming) finishRename(e.target,true); });
 $("#paneGear").addEventListener("keydown", e => { const row=e.target.closest("[data-g]"); if(row && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); row.click(); } });
 $("#paneGear").addEventListener("change", e => {
   const g = S.gear[U.gearSel]; if(!g) return; const t=e.target;
@@ -658,6 +672,20 @@ function gearMesh(g, selected, opts){
       break; }
     case "tree": { const tr=new THREE.Mesh(new THREE.CylinderGeometry(w/2*0.8,w/2,h,20), new THREE.MeshStandardMaterial({color:"#6B5544",roughness:.95})); tr.position.y=h/2; grp.add(tr);
       const cr=Math.max(120,w*3); const cn=new THREE.Mesh(new THREE.ConeGeometry(cr,h*0.5,16), new THREE.MeshStandardMaterial({color:g.color||"#3F6B45",roughness:.9,transparent:true,opacity:.55,depthWrite:false})); cn.position.y=h*0.72; cn.userData.noPick=true; grp.add(cn); break; }
+    case "hotpot": { const steel=new THREE.MeshStandardMaterial({color:col, roughness:.35, metalness:.25, emissive: selected? new THREE.Color(cssVar("--hi")) : 0x000000, emissiveIntensity: selected? .3:0});
+      const R=w/2, ph=h*0.62, bh=h-ph;
+      const burner=new THREE.Mesh(new THREE.CylinderGeometry(R*0.85,R*0.9,bh,32), new THREE.MeshStandardMaterial({color:"#2a2a2a", roughness:.6, metalness:.4})); burner.position.y=bh/2; grp.add(burner);
+      const pot=new THREE.Mesh(new THREE.CylinderGeometry(R,R*0.92,ph,40,1,true), steel); pot.position.y=bh+ph/2; grp.add(pot);
+      const bottom=new THREE.Mesh(new THREE.CircleGeometry(R*0.92,32), steel); bottom.rotation.x=-Math.PI/2; bottom.position.y=bh+0.3; grp.add(bottom);
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(R,0.5,8,48), steel); rim.rotation.x=Math.PI/2; rim.position.y=h; grp.add(rim);
+      const div=new THREE.Mesh(new THREE.BoxGeometry(0.6,ph*0.9,R*1.96), steel); div.position.y=bh+ph*0.48; grp.add(div);
+      const soupL=new THREE.Mesh(new THREE.CircleGeometry(R*0.97,40,Math.PI/2,Math.PI), new THREE.MeshStandardMaterial({color:"#B8321E", roughness:.25})); soupL.rotation.x=-Math.PI/2; soupL.position.y=h-2.2; grp.add(soupL);
+      const soupR=new THREE.Mesh(new THREE.CircleGeometry(R*0.97,40,-Math.PI/2,Math.PI), new THREE.MeshStandardMaterial({color:"#E8D9B0", roughness:.25})); soupR.rotation.x=-Math.PI/2; soupR.position.y=h-2.2; grp.add(soupR);
+      [-1,1].forEach(sx=>{ const hd=new THREE.Mesh(new THREE.TorusGeometry(3,0.6,8,16,Math.PI), new THREE.MeshStandardMaterial({color:"#1a1a1a", roughness:.6})); hd.position.set(sx*(R+0.5),h-3,0); hd.rotation.set(0,sx>0?Math.PI/2:-Math.PI/2,-Math.PI/2); grp.add(hd); });
+      const food=["#F2E6C8","#6E8B3D","#C98B5B","#F0A3A3","#3F6B2E"]; for(let i=0;i<14;i++){ const a=Math.random()*Math.PI*2, r=Math.random()*R*0.8; const f=new THREE.Mesh(new THREE.SphereGeometry(1+Math.random()*1.3,8,6), new THREE.MeshStandardMaterial({color:food[i%food.length], roughness:.6})); f.scale.y=.5; f.position.set(Math.cos(a)*r,h-2,Math.sin(a)*r); grp.add(f); }
+      const bub=new THREE.Group(); bub.visible=false; bub.userData.bubbles=true;
+      for(let i=0;i<22;i++){ const a=Math.random()*Math.PI*2, r=Math.random()*R*0.85; const b=new THREE.Mesh(new THREE.SphereGeometry(0.8,8,6), new THREE.MeshStandardMaterial({color:"#fff7e8", transparent:true, opacity:.8, roughness:.1})); b.position.set(Math.cos(a)*r,h-2,Math.sin(a)*r); b.userData.bubble=true; b.userData.y0=h-2; b.userData.ph=Math.random(); bub.add(b); }
+      grp.add(bub); break; }
     case "slattable": { const wood=new THREE.MeshStandardMaterial({color:col, roughness:.7, emissive: selected? new THREE.Color(cssVar("--hi")) : 0x000000, emissiveIntensity: selected? .3:0});
       const woodD=new THREE.MeshStandardMaterial({color:col.clone().multiplyScalar(.78), roughness:.75});
       const st=2, sw=3.2, gap=0.9, n=Math.max(1,Math.floor((w-4)/(sw+gap)));
@@ -722,7 +750,7 @@ function groundTexture(kind){
 }
 function rebuildScene(){
   while(world.children.length) world.remove(world.children[0]);
-  fires = []; screensOn = 0; ytWanted = [];
+  fires = []; screensOn = 0; ytWanted = []; smokes = []; hotBubbles = [];
   itemGroups = {}; $("#labels").innerHTML = ""; labelEls = {};
   const photo = U.view==="photo";
   scene.background = photo ? null : new THREE.Color(cssVar("--stage"));
@@ -751,18 +779,36 @@ function rebuildScene(){
     }
   }
   L.items.forEach(it => { const g0=S.gear[it.gearId]; if(!g0) return; const g=effGear(g0, it);
-    const grp = gearMesh(g, isSel(it.uid), it.tent); grp.position.set(it.x,0,it.y); grp.rotation.y = -it.rot*Math.PI/180;
+    const grp = gearMesh(g, isSel(it.uid), it.tent); grp.position.set(it.x,it.elev||0,it.y); grp.rotation.y = -it.rot*Math.PI/180;
     grp.userData.uid = it.uid; world.add(grp); itemGroups[it.uid]=grp;
     if(it.stand && g.stand){ grp.children.forEach(c=>c.position.y+=STAND_H); grp.add(makeStand(g)); }
-    if(it.fire && g.cat==="焚火") grp.add(makeFire(g));
+    if(it.fire && isPit(g)){ grp.add(makeFire(g)); if(it.fire==="smoke") grp.add(makeSmoke({y0:g.h+Math.min(g.w,g.d)*0.9, r:Math.min(g.w,g.d)*0.3, rise:420, size:[22,140], count:26, period:6.5, color:"#8a8a8a", alpha:.42, drift:60})); }
+    if(it.boil && g.shape==="hotpot"){ grp.add(makeSmoke({y0:g.h, r:g.w*0.3, rise:90, size:[8,40], count:16, period:3.2, color:"#ffffff", alpha:.7, drift:12})); grp.traverse(o=>{ if(o.userData.bubbles) o.visible=true; }); hotBubbles.push(grp); }
     if(it.on && g.shape==="screen") grp.traverse(o=>{ if(o.userData.screen){ const yid=ytId(it.yt!==undefined?it.yt:g.yt);
       if(yid && !movieVideo && cssR){ o.material=new THREE.MeshBasicMaterial({color:0x000000, opacity:0, blending:THREE.NoBlending, side:THREE.DoubleSide}); ytWanted.push({uid:it.uid, id:yid, mesh:o, w:o.geometry.parameters.width, h:o.geometry.parameters.height}); }
       else o.material=movieMaterial(); const l=new THREE.PointLight(0x9fb8ff,.6,600,1.5); l.position.set(0,o.position.y,60); grp.add(l); screensOn++; } });
-    const el=document.createElement("div"); el.className="lbl"+(isSel(it.uid)?" sel":""); el.innerHTML=`${it.locked?"🔒 ":""}${it.fire&&g.cat==="焚火"?"🔥 ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.stand&&g.stand?STAND_H:0)+(it.fire&&g.cat==="焚火"?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
+    const el=document.createElement("div"); el.className="lbl"+(isSel(it.uid)?" sel":""); el.innerHTML=`${it.locked?"🔒 ":""}${it.fire&&isPit(g)?(it.fire==="smoke"?"🔥💨 ":"🔥 "):""}${it.boil&&g.shape==="hotpot"?"♨️ ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.elev||0)+(it.stand&&g.stand?STAND_H:0)+(it.fire&&isPit(g)?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
   });
 }
 let labelEls = {};
 let fires = [];
+const isPit = g => g.cat==="焚火" && g.shape!=="box";
+const fireMode = it => !it.fire ? "off" : it.fire==="smoke" ? "smoke" : "fire";
+let smokes = [], hotBubbles = [];
+let puffTex = null;
+function puffTexture(){ if(puffTex) return puffTex; const c=document.createElement("canvas"); c.width=c.height=64; const x=c.getContext("2d"); const gr=x.createRadialGradient(32,32,2,32,32,31); gr.addColorStop(0,"rgba(255,255,255,1)"); gr.addColorStop(.5,"rgba(255,255,255,.45)"); gr.addColorStop(1,"rgba(255,255,255,0)"); x.fillStyle=gr; x.fillRect(0,0,64,64); return (puffTex=new THREE.CanvasTexture(c)); }
+function makeSmoke(o){
+  const g=new THREE.Group(); const list=[];
+  for(let i=0;i<o.count;i++){ const m=new THREE.SpriteMaterial({map:puffTexture(), color:new THREE.Color(o.color), transparent:true, depthWrite:false, opacity:0});
+    const sp=new THREE.Sprite(m); sp.userData.noPick=true; sp.userData.ph=i/o.count; sp.userData.ax=(Math.random()-.5)*2; sp.userData.az=(Math.random()-.5)*2; sp.userData.rs=Math.random(); g.add(sp); list.push(sp); }
+  smokes.push({list,o}); return g;
+}
+function animateSmoke(t){
+  smokes.forEach(({list,o}) => list.forEach(sp => { const u=((t/o.period)+sp.userData.ph)%1;
+    const y=o.y0+u*o.rise, sw=o.drift*u*u; sp.position.set(sp.userData.ax*o.r*(1-u*.5)+Math.sin(t*.7+sp.userData.rs*6)*sw*.4 + sw*.6, y, sp.userData.az*o.r*(1-u*.5)+Math.cos(t*.5+sp.userData.rs*6)*sw*.3);
+    const s=o.size[0]+(o.size[1]-o.size[0])*u; sp.scale.set(s,s,1); sp.material.opacity=o.alpha*Math.min(1,u*8)*(1-u)*(1-u*.3); sp.material.rotation=sp.userData.rs*6+u*1.5; }));
+  hotBubbles.forEach(grp => grp.traverse(b => { if(b.userData.bubble){ const k=(t*2.2+b.userData.ph)%1; b.scale.setScalar(0.3+k*1.1); b.position.y=b.userData.y0+k*0.8; b.material.opacity=1-k; } }));
+}
 /* YouTube on the projector screen: an iframe placed in 3D with CSS3DRenderer, on top of the WebGL canvas */
 function ytId(v){ if(!v) return ""; v=String(v).trim(); const m=v.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m?m[1]:(/^[\w-]{11}$/.test(v)?v:""); }
 let ytWanted = [], ytLive = {}, ytMuted = true;
@@ -936,9 +982,9 @@ renderer.domElement.addEventListener("pointermove", e => {
   if(p && U.tab==="layout") $("#coord").textContent = `X ${Math.round(p.x)} · Y ${Math.round(p.z)} cm`;
   if(!drag || !p) return;
   drag.it.x = snapV(p.x+drag.ox, 5); drag.it.y = snapV(p.z+drag.oz, 5); drag.moved=true;
-  const g = itemGroups[drag.it.uid]; if(g) g.position.set(drag.it.x,0,drag.it.y);
+  const g = itemGroups[drag.it.uid]; if(g) g.position.set(drag.it.x,drag.it.elev||0,drag.it.y);
   const l = labelEls[drag.it.uid]; if(l){ l.x=drag.it.x; l.z=drag.it.y; }
-  (drag.others||[]).forEach(o=>{ o.it.x=drag.it.x+o.dx; o.it.y=drag.it.y+o.dy; const gg=itemGroups[o.it.uid]; if(gg) gg.position.set(o.it.x,0,o.it.y); const ll=labelEls[o.it.uid]; if(ll){ ll.x=o.it.x; ll.z=o.it.y; } });
+  (drag.others||[]).forEach(o=>{ o.it.x=drag.it.x+o.dx; o.it.y=drag.it.y+o.dy; const gg=itemGroups[o.it.uid]; if(gg) gg.position.set(o.it.x,o.it.elev||0,o.it.y); const ll=labelEls[o.it.uid]; if(ll){ ll.x=o.it.x; ll.z=o.it.y; } });
 });
 function endDrag(e){
   if(FP.look){ FP.look=null; return; }
@@ -999,7 +1045,7 @@ function updateScale(){
   const nice=[10,20,50,100,200,500,1000]; let cm=nice.find(n=>n*pxPerCm>=70)||1000;
   $("#scaleBar").style.width = (cm*pxPerCm)+"px"; $("#scaleTxt").textContent = cm>=100 ? (cm/100)+" m" : cm+" cm";
 }
-function loop(){ requestAnimationFrame(loop); fpStep(); if(fires.length) animateFires(performance.now()/1000); if(screensOn) drawMovie(performance.now()/1000); else if(movieVideo && !movieVideo.paused) movieVideo.pause(); if(perCtl.enabled) perCtl.update(); const cam=activeCam(); renderer.render(scene, cam); if(cssR){ syncYT(); const live=Object.keys(ytLive).length; if(live){ cssR.render(cssScene, cam); } if(live && scene.background){ stage.style.backgroundColor = "#"+scene.background.getHexString(); scene.background=null; renderer.render(scene, cam); } } updateLabels(cam); updateScale(); }
+function loop(){ requestAnimationFrame(loop); fpStep(); if(fires.length) animateFires(performance.now()/1000); if(smokes.length||hotBubbles.length) animateSmoke(performance.now()/1000); if(screensOn) drawMovie(performance.now()/1000); else if(movieVideo && !movieVideo.paused) movieVideo.pause(); if(perCtl.enabled) perCtl.update(); const cam=activeCam(); renderer.render(scene, cam); if(cssR){ syncYT(); const live=Object.keys(ytLive).length; if(live){ cssR.render(cssScene, cam); } if(live && scene.background){ stage.style.backgroundColor = "#"+scene.background.getHexString(); scene.background=null; renderer.render(scene, cam); } } updateLabels(cam); updateScale(); }
 
 new ResizeObserver(() => resize()).observe(stage);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => rebuildScene());

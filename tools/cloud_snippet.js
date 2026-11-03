@@ -31,7 +31,9 @@ async function fbSyncSeed(fs){
   const gearSnap = await fs.collection("gear").get(), laySnap = await fs.collection("layouts").get();
   let loc = {}; try{ loc = JSON.parse(localStorage.getItem("campplan.v1")||"{}"); }catch(e){}
   const writes = [];
-  Object.entries(j.gear||{}).forEach(([k,v]) => writes.push(["gear",k,v]));
+  /* only add gear the cloud doesn't have, so names or sizes people changed on the site are never overwritten */
+  const haveGear = new Set(gearSnap.docs.map(d=>d.id));
+  Object.entries(j.gear||{}).forEach(([k,v]) => { if(!haveGear.has(k)) writes.push(["gear",k,v]); });
   if(gearSnap.empty) Object.entries(loc.gear||{}).forEach(([k,v]) => { if(!(j.gear||{})[k]) writes.push(["gear",k,v]); });
   const have = new Set(laySnap.docs.map(d=>d.id));
   const lays = laySnap.empty ? {...(j.layouts||{}), ...(loc.layouts||{})} : (j.layouts||{});
