@@ -356,7 +356,7 @@ function renderLayoutPane(){
       ${isPit(g)?`<div class="sec"><h3>焚火台</h3><div class="chips">${[["off","🪵 熄火"],["fire","🔥 火"],["smoke","🔥💨 火＋煙"]].map(([k,n])=>`<button class="chip" data-fire="${k}" aria-pressed="${fireMode(it)===k}">${n}</button>`).join("")}</div></div>`:""}
       ${g.shape==="hotpot"?`<div class="row"><button class="btn ${it.boil?"primary":""}" id="iBoil">${it.boil?"♨️ 煮滾中（按此關火）":"🍲 開火煮滾"}</button></div>`:""}
       <div class="row"><button class="btn ${it.locked?"primary":""}" id="iLock">${it.locked?"🔒 已鎖定（按此解鎖）":"🔓 鎖定位置"}</button></div>
-      ${it.locked?`<div class="help">鎖定中：不能拖曳、轉向或微調，點畫面時會直接穿過它，選到裡面的東西。要解鎖可以在下方「物品清單」點它。</div>`:""}
+      ${it.locked?`<div class="help">鎖定中：不能拖曳、轉向或微調，點畫面時會直接穿過它，選到裡面的東西；在畫面上<b>連點兩下</b>可以選到它，按 <kbd>Delete</kbd> 可以刪除。要解鎖可以在下方「物品清單」點它。</div>`:""}
       <div class="row"><button class="btn" id="iRot" ${it.locked?"disabled":""}>轉 90°</button><button class="btn" id="iDup">複製</button><button class="btn danger" id="iDel">移除</button></div>
       <div class="row" style="flex-wrap:wrap;gap:6px"><span class="help" style="margin:0;align-self:center">複製到</span><button class="btn" data-cp="L">⬅ 左邊</button><button class="btn" data-cp="R">右邊 ➡</button><button class="btn" data-cp="U">⬆ 上面</button><button class="btn" data-cp="D">⬇ 下面</button><button class="btn" data-cp="ML">⇋ 左鏡像</button><button class="btn" data-cp="MR">⇋ 右鏡像</button></div>
       <div class="row"><button class="btn ${U.placing?"primary":""}" id="cpPlace">${U.placing?"📍 點畫面要放的位置…（再按取消）":"📍 移到點選的位置"}</button></div>
@@ -373,7 +373,7 @@ function renderLayoutPane(){
     } else h += `<div class="empty">裝備庫還沒有東西，到「裝備庫」分頁新增。</div>`;
     h += `</div>`;
     const its = L.items.filter(i=>S.gear[i.gearId]);
-    if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西。點名稱可以選取。</div></div>`;
+    if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西；在畫面上連點兩下可以選到鎖住的物品。點名稱可以選取。</div></div>`;
     const counts = {}; L.items.forEach(i=>counts[i.gearId]=(counts[i.gearId]||0)+1);
     const rows = Object.entries(counts).filter(([gid])=>S.gear[gid]);
     if(rows.length) h += `<div class="sec"><h3>這張配置的清單</h3>${rows.map(([gid,n])=>`<div class="row"><span class="sw" style="background:${esc(S.gear[gid].color)}"></span><span style="flex:1">${esc(S.gear[gid].name)}</span><span class="mono">×${n}</span></div>`).join("")}</div>`;
@@ -556,7 +556,7 @@ document.addEventListener("keydown", e => {
     else if(e.key==="Escape"){ clearSel(); rebuildScene(); renderLayoutPane(); }
     return;
   }
-  if(it.locked && (e.key==="r"||e.key==="R"||e.key.startsWith("Arrow")||e.key==="Delete"||e.key==="Backspace")){ e.preventDefault(); return; }
+  if(it.locked && (e.key==="r"||e.key==="R"||e.key.startsWith("Arrow"))){ e.preventDefault(); return; }
   if(e.key==="r"||e.key==="R"){ rotateSel(e.shiftKey?15:90); e.preventDefault(); }
   else if(e.key==="Delete"||e.key==="Backspace"){ delSel(); e.preventDefault(); }
   else if(e.key.startsWith("Arrow")){ if(e.key==="ArrowLeft")it.x-=step; if(e.key==="ArrowRight")it.x+=step; if(e.key==="ArrowUp")it.y-=step; if(e.key==="ArrowDown")it.y+=step; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); e.preventDefault(); }
@@ -592,11 +592,11 @@ function footprint(g){
   if(g.shape==="cylinder"||g.shape==="tree"){ const pts=[]; for(let i=0;i<40;i++){ const a=i/40*Math.PI*2; pts.push([Math.cos(a)*w, Math.sin(a)*d]); } return pts; }
   return [[-w,-d],[w,-d],[w,d],[-w,d]];
 }
-/* bright ground halo under a selected item, drawn on top so it shows even under canopies or when locked */
+/* bright ground halo under a selected item; depth-tested so the item itself hides the part beneath it */
 function selHalo(g){
   const fp=footprint(g), outer=fp.map(([x,z])=>{ const L=Math.hypot(x,z)||1, off=Math.max(12, 60-L); return [x+x/L*off, z+z/L*off]; });
   const shp=new THREE.Shape(outer.map(([x,z])=>new THREE.Vector2(x,-z))); shp.holes.push(new THREE.Path(fp.map(([x,z])=>new THREE.Vector2(x,-z))));
-  const m=new THREE.Mesh(new THREE.ShapeGeometry(shp), new THREE.MeshBasicMaterial({color:"#FFD23F", transparent:true, opacity:.9, depthTest:false, depthWrite:false, side:THREE.DoubleSide}));
+  const m=new THREE.Mesh(new THREE.ShapeGeometry(shp), new THREE.MeshBasicMaterial({color:"#FFD23F", transparent:true, opacity:.9, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2, side:THREE.DoubleSide}));
   m.rotation.x=-Math.PI/2; m.position.y=2; m.renderOrder=20; m.userData.noPick=true; return m;
 }
 function lineLoop(pts, y, color, opacity=1){
@@ -977,11 +977,11 @@ const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), ground = new THREE
 let drag = null;
 function setNdc(e){ const r=renderer.domElement.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1); ray.setFromCamera(ndc, activeCam()); }
 function groundPt(){ const p=new THREE.Vector3(); return ray.ray.intersectPlane(ground,p) ? p : null; }
-function pickItem(){
+function pickItem(withLocked){
   const L=curLayout(); if(!L) return null;
   const hits = ray.intersectObjects(Object.values(itemGroups), true).filter(h=>h.object.isMesh && !h.object.userData.noPick);
   // prefer smaller things over a tent shell in site layouts
-  for(const h of hits){ let o=h.object; while(o && !o.userData.uid) o=o.parent; if(!o) continue; const it=L.items.find(i=>i.uid===o.userData.uid); if(!it || it.locked) continue; const g=S.gear[it.gearId]; if(g && g.shape==="tent" && hits.some(h2=>{let q=h2.object; while(q&&!q.userData.uid)q=q.parent; const i2=q&&L.items.find(i=>i.uid===q.userData.uid); return i2 && !i2.locked && S.gear[i2.gearId] && S.gear[i2.gearId].shape!=="tent";})) continue; return o.userData.uid; }
+  for(const h of hits){ let o=h.object; while(o && !o.userData.uid) o=o.parent; if(!o) continue; const it=L.items.find(i=>i.uid===o.userData.uid); if(!it || (it.locked && !withLocked)) continue; const g=S.gear[it.gearId]; if(g && g.shape==="tent" && hits.some(h2=>{let q=h2.object; while(q&&!q.userData.uid)q=q.parent; const i2=q&&L.items.find(i=>i.uid===q.userData.uid); return i2 && (!i2.locked || withLocked) && S.gear[i2.gearId] && S.gear[i2.gearId].shape!=="tent";})) continue; return o.userData.uid; }
   return null;
 }
 renderer.domElement.addEventListener("pointerdown", e => {
@@ -1003,6 +1003,13 @@ renderer.domElement.addEventListener("pointerdown", e => {
   else downEmpty = {x:e.clientX,y:e.clientY};
 }, true);
 let downEmpty = null;
+/* double-click selects even a locked item (it still can't be moved, but Delete removes it) */
+renderer.domElement.addEventListener("dblclick", e => {
+  if(isFP() || U.tab!=="layout" || !curLayout() || U.placing) return;
+  setNdc(e); const id = pickItem(true); if(!id) return;
+  if(e.shiftKey || e.ctrlKey || e.metaKey || U.multiMode){ if(!isSel(id)) toggleSel(id); } else { U.sel=id; U.multi=[id]; }
+  downEmpty=null; rebuildScene(); renderLayoutPane(); e.preventDefault();
+});
 renderer.domElement.addEventListener("pointermove", e => {
   if(FP.look && isFP()){ FP.yaw = FP.look.yaw - (e.clientX-FP.look.x)*0.005; FP.pitch = Math.max(-1.45, Math.min(1.45, FP.look.pitch - (e.clientY-FP.look.y)*0.005)); return; }
   setNdc(e); const p = groundPt();
