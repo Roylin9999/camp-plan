@@ -413,6 +413,8 @@ function renderLayoutPane(){
     if(L.kind==="site") h += `<div class="row"><label class="f">營位寬 cm<input type="number" id="lW" min="100" step="10" value="${L.siteW||1000}"></label><label class="f">營位深 cm<input type="number" id="lD" min="100" step="10" value="${L.siteD||800}"></label></div>`;
     else h += `<label class="f">帳篷<select id="lTent">${tents.map(([id,g])=>`<option value="${esc(id)}" ${id===L.tentId?"selected":""}>${esc(g.name)}（${dimsTxt(g)}）</option>`).join("")}</select></label>`;
     if(L.kind==="tent" && S.gear[L.tentId] && S.gear[L.tentId].model) h += doorUI(L.tentOpts, "layout", S.gear[L.tentId]);
+    const sk = L.sky || "none";
+    h += `<div class="row"><label class="f">天空<select id="lSky">${SKIES.map(([k,n])=>`<option value="${k}" ${k===sk?"selected":""}>${n}</option>`).join("")}</select></label>${sk==="color"?`<label class="f" style="flex:0 0 72px">顏色<input type="color" id="lSkyColor" value="${esc(L.skyColor||"#9CC8EE")}" style="width:100%;height:32px;border:1px solid var(--line);border-radius:6px;background:none"></label>`:""}</div>`;
     const gk = L.ground || "none";
     h += `<div class="row"><label class="f">地面<select id="lGround">${[["none","不顯示（只有格線）"],["gravel","碎石地"],["grass","草地"],["mixed","碎石＋草地"],["color","單色"]].map(([k,n])=>`<option value="${k}" ${k===gk?"selected":""}>${n}</option>`).join("")}</select></label>${gk==="color"?`<label class="f" style="flex:0 0 72px">顏色<input type="color" id="lGroundColor" value="${esc(L.groundColor||"#8C8A80")}" style="width:100%;height:32px;border:1px solid var(--line);border-radius:6px;background:none"></label>`:""}</div>`;
     h += `<div class="row"><button class="btn" id="dupLayout">複製這張</button><button class="btn danger ${U.armed==="layout"?"armed":""}" id="delLayout">${U.armed==="layout"?"再按一次刪除":"刪除配置"}</button></div></div>`;
@@ -565,6 +567,8 @@ $("#paneLayout").addEventListener("change", e => {
   if(!L) return;
   if(t.id==="lName"){ L.name=t.value.trim()||L.name; saveLayout(U.layoutId); renderLayoutPane(); }
   if(t.id==="lW"||t.id==="lD"){ L.siteW=Math.max(100,+$("#lW").value||1000); L.siteD=Math.max(100,+$("#lD").value||800); saveLayout(U.layoutId); rebuildScene(); fitView(); }
+  if(t.id==="lSky"){ L.sky=t.value; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); }
+  if(t.id==="lSkyColor"){ L.skyColor=t.value; saveLayout(U.layoutId); rebuildScene(); }
   if(t.id==="lGround"){ L.ground=t.value; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); }
   if(t.id==="lGroundColor"){ L.groundColor=t.value; saveLayout(U.layoutId); rebuildScene(); }
   if(t.id==="lTent"){ L.tentId=t.value; saveLayout(U.layoutId); rebuildScene(); fitView(); }
@@ -704,7 +708,7 @@ const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDr
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
 stage.insertBefore(renderer.domElement, stage.firstChild);
 const scene = new THREE.Scene();
-scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8170, 0.85));
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a8170, 0.85); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(-400, 900, -300); scene.add(sun);
 const topCam = new THREE.OrthographicCamera(-1,1,1,-1,1,20000); topCam.up.set(0,0,-1);
 const perCam = new THREE.PerspectiveCamera(45, 1, 1, 50000);
@@ -964,6 +968,7 @@ function rebuildScene(){
   const L = curLayout(); if(!L) return;
   const b = layoutBounds(L), m = L.kind==="site"?300:150;
   gridGroup = gridLines(b.x0-m,b.z0-m,b.x1+m,b.z1+m); world.add(gridGroup); applyGridOpacity();
+  addSky(L, b, photo);
   const gk = L.ground || "none", hasGround = gk!=="none" && !photo;
   if(hasGround){ const gm = m + 300, gw = b.x1-b.x0+gm*2, gd = b.z1-b.z0+gm*2;
     let matG; if(gk==="color") matG = new THREE.MeshStandardMaterial({color:L.groundColor||"#8C8A80", roughness:1});
@@ -1079,6 +1084,37 @@ function setMovieFile(f){
   if(movieVideo){ movieVideo.pause(); URL.revokeObjectURL(movieVideo.src); }
   movieVideo=document.createElement("video"); movieVideo.src=URL.createObjectURL(f); movieVideo.loop=true; movieVideo.playsInline=true; movieVideo.crossOrigin="anonymous";
   movieName=f.name; movieSound=true; movieTex=null; rebuildScene(); renderLayoutPane();
+}
+/* sky dome (per layout, like the ground): a big inside-out sphere with a painted canvas; night also dims the lights */
+const SKIES=[["none","不顯示（背景色）"],["day","晴天藍天＋白雲"],["sunset","夕陽"],["dusk","傍晚藍調"],["night","夜晚星空＋月亮"],["overcast","陰天"],["color","單色"]];
+const skyTexCache={};
+function skyTexture(kind, col){
+  const key=kind+"|"+(col||""); if(skyTexCache[key]) return skyTexCache[key];
+  const W=2048, H=1024, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"), hz=H/2;
+  const P={ day:["#3E7FD0","#79B0E8","#CFE6F7","#B9C9B4"], sunset:["#2B3A6B","#B65C7A","#F6A04D","#5A4A3E"], dusk:["#0F1B3D","#334C86","#8FA6CF","#2D3440"],
+            night:["#03060F","#0A1430","#1B2A4E","#0B0F14"], overcast:["#8E959C","#B3B8BC","#D3D5D6","#8A8F88"] }[kind];
+  let stops = P || (()=>{ const k=new THREE.Color(col||"#9CC8EE"); return [k.clone().multiplyScalar(.75).getStyle(), k.getStyle(), k.clone().lerp(new THREE.Color("#ffffff"),.35).getStyle(), k.clone().multiplyScalar(.5).getStyle()]; })();
+  let g=x.createLinearGradient(0,0,0,hz); g.addColorStop(0,stops[0]); g.addColorStop(.55,stops[1]); g.addColorStop(1,stops[2]); x.fillStyle=g; x.fillRect(0,0,W,hz);
+  g=x.createLinearGradient(0,hz,0,H); g.addColorStop(0,stops[2]); g.addColorStop(.06,stops[3]); g.addColorStop(1,stops[3]); x.fillStyle=g; x.fillRect(0,hz,W,H-hz);
+  let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  if(kind==="night"){ for(let i=0;i<1400;i++){ const yy=Math.pow(rnd(),1.4)*hz*0.95, r=rnd()<.06?1.6:rnd()*0.9+.3; x.fillStyle=`rgba(255,255,${220+rnd()*35|0},${.35+rnd()*.65})`; x.beginPath(); x.arc(rnd()*W,yy,r,0,7); x.fill(); }
+    const mx=W*0.62, my=hz*0.42; let mg=x.createRadialGradient(mx,my,0,mx,my,90); mg.addColorStop(0,"rgba(255,250,225,.55)"); mg.addColorStop(1,"rgba(255,250,225,0)"); x.fillStyle=mg; x.fillRect(mx-90,my-90,180,180);
+    x.fillStyle="#FFF8E0"; x.beginPath(); x.arc(mx,my,22,0,7); x.fill(); x.fillStyle="rgba(200,195,170,.35)"; [[-6,-5,5],[7,4,4],[-2,9,3]].forEach(([a,b2,r])=>{ x.beginPath(); x.arc(mx+a,my+b2,r,0,7); x.fill(); }); }
+  if(kind==="sunset"){ const sx=W*0.3, sy=hz*0.9; let sg=x.createRadialGradient(sx,sy,0,sx,sy,260); sg.addColorStop(0,"rgba(255,230,160,.95)"); sg.addColorStop(.12,"rgba(255,190,100,.7)"); sg.addColorStop(1,"rgba(255,150,80,0)"); x.fillStyle=sg; x.fillRect(sx-260,sy-260,520,520); }
+  const clouds = {day:[26,"255,255,255",.85], sunset:[18,"255,200,170",.6], dusk:[10,"170,180,215",.35], overcast:[60,"235,236,238",.55], color:[0]}[kind]||[0];
+  for(let i=0;i<clouds[0];i++){ const cx=rnd()*W, cy=hz*(0.35+rnd()*0.55), sc=(kind==="overcast"?2:1)*(0.6+rnd()), n=6+rnd()*6|0;
+    for(let j=0;j<n;j++){ const px=cx+(rnd()-.5)*160*sc, py=cy+(rnd()-.5)*22*sc, r=(26+rnd()*34)*sc; const cg=x.createRadialGradient(px,py,0,px,py,r); cg.addColorStop(0,`rgba(${clouds[1]},${clouds[2]})`); cg.addColorStop(1,`rgba(${clouds[1]},0)`); x.fillStyle=cg; x.beginPath(); x.ellipse(px,py,r*1.6,r*.7,0,0,7); x.fill(); } }
+  const t=new THREE.CanvasTexture(c); if(THREE.sRGBEncoding) t.encoding=THREE.sRGBEncoding; skyTexCache[key]=t; return t;
+}
+function addSky(L, b, photo){
+  const show = !(photo || U.view==="top" || U.tab!=="layout"), kind = show ? (L.sky || "none") : "none", night = kind==="night";
+  hemi.intensity = night?0.32 : kind==="dusk"?0.5 : kind==="sunset"?0.7 : kind==="overcast"?0.8 : 0.85;
+  sun.intensity  = night?0.12 : kind==="dusk"?0.25 : kind==="sunset"?0.55 : kind==="overcast"?0.3 : 0.6;
+  sun.color.set(kind==="sunset"?"#FFC48A": night?"#9FB2FF":"#FFFFFF"); hemi.color.set(night?"#8FA2D8":"#FFFFFF");
+  if(kind==="none") return;
+  const R=20000, sph=new THREE.Mesh(new THREE.SphereGeometry(R,48,24), new THREE.MeshBasicMaterial({map:skyTexture(kind, L.skyColor), side:THREE.BackSide, depthWrite:false, fog:false}));
+  sph.position.set((b.x0+b.x1)/2, -40, (b.z0+b.z1)/2); sph.renderOrder=-10; sph.userData.noPick=true; world.add(sph);
+  scene.background = new THREE.Color(kind==="night"?"#03060F":"#000000");
 }
 function makeFire(g){
   const f = new THREE.Group(); f.position.y = g.h*0.8; const r = Math.min(g.w,g.d)*0.34;
