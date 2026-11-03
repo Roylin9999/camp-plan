@@ -522,6 +522,17 @@
    "notes": "官方：56×57×64cm。202005 碳纖維＋CORDURA；202006 鋁合金＋牛津布。顏色未標示，先用深灰",
    "shape": "chair",
    "w": 56
+  },
+  "g_projector": {
+   "cat": "影音",
+   "color": "#222C46",
+   "d": 44,
+   "h": 84,
+   "model": "models/g_projector.glb",
+   "name": "Wanbo 萬播 TOGO PRO 投影機（含支架）",
+   "notes": "官方：機身166×159×230mm，2.6kg，深藍色，360°旋轉雲台、皮革提把，99Wh 電池，500 流明。架在約60cm高的三腳燈架上（Roy 說50–70cm），腳架展開約50cm",
+   "shape": "box",
+   "w": 50
   }
  },
  "layouts": {
