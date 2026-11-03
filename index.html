@@ -223,7 +223,7 @@ async function initStore(){
 }
 
 /* ---------------- UI state ---------------- */
-const U = { showRoof:true, fabricOp:.6, tab:"layout", layoutId:null, sel:null, gearSel:null, view:"top", snap:true, labels:true, armed:null };
+const U = { showRoof:true, fabricOp:.6, tab:"layout", layoutId:null, sel:null, multi:[], multiMode:false, gearSel:null, view:"top", snap:true, labels:true, armed:null };
 try { const p = JSON.parse(localStorage.getItem("campplan.ui")||"{}"); if(p.layoutId) U.layoutId=p.layoutId; if(p.view==="top"||p.view==="3d") U.view=p.view; if(typeof p.showRoof==="boolean") U.showRoof=p.showRoof; if(typeof p.fabricOp==="number") U.fabricOp=p.fabricOp; } catch(e){}
 function saveUI(){ try{ localStorage.setItem("campplan.ui", JSON.stringify({layoutId:U.layoutId, view:U.view, showRoof:U.showRoof, fabricOp:U.fabricOp})); }catch(e){} }
 
@@ -265,7 +265,14 @@ function renderLayoutPane(){
     h += `<div class="row"><label class="f">地面<select id="lGround">${[["none","不顯示（只有格線）"],["gravel","碎石地"],["grass","草地"],["mixed","碎石＋草地"],["color","單色"]].map(([k,n])=>`<option value="${k}" ${k===gk?"selected":""}>${n}</option>`).join("")}</select></label>${gk==="color"?`<label class="f" style="flex:0 0 72px">顏色<input type="color" id="lGroundColor" value="${esc(L.groundColor||"#8C8A80")}" style="width:100%;height:32px;border:1px solid var(--line);border-radius:6px;background:none"></label>`:""}</div>`;
     h += `<div class="row"><button class="btn" id="dupLayout">複製這張</button><button class="btn danger ${U.armed==="layout"?"armed":""}" id="delLayout">${U.armed==="layout"?"再按一次刪除":"刪除配置"}</button></div></div>`;
     const it = L.items.find(i=>i.uid===U.sel); const g = it && S.gear[it.gearId];
-    if(it && g){
+    const mIds = selIds();
+    if(mIds.length>1){
+      const its=selItems(), nl=its.filter(i=>i.locked).length;
+      h += `<div class="sec card"><h3>已選取 ${its.length} 件</h3><div class="mono" style="line-height:1.6">${its.map(i=>esc((S.gear[i.gearId]||{}).name||"")).join("、")}</div>
+      ${nl?`<div class="help">其中 ${nl} 件已鎖定，不會跟著移動。</div>`:""}
+      <div class="row"><button class="btn" id="mRot">整組轉 90°</button><button class="btn" id="mDup">複製</button><button class="btn danger" id="mDel">移除</button><button class="btn" id="mNone">取消選取</button></div>
+      <div class="help">拖曳其中一件，整組會一起移動。方向鍵一起微調、<kbd>R</kbd> 整組轉向、<kbd>Esc</kbd> 取消。</div></div>`;
+    } else if(it && g){
       h += `<div class="sec card"><h3>選取中</h3><div class="row"><span class="sw" style="background:${esc(g.color)}"></span><strong>${esc(g.name)}</strong></div>
       <div class="mono">寬 ${g.w} × 深 ${g.d} × 高 ${g.h} cm</div>
       <div class="row"><label class="f">X cm<input type="number" id="iX" step="1" value="${Math.round(it.x)}" ${it.locked?"disabled":""}></label><label class="f">Y cm<input type="number" id="iY" step="1" value="${Math.round(it.y)}" ${it.locked?"disabled":""}></label><label class="f">旋轉°<input type="number" id="iR" step="15" value="${Math.round(it.rot)}" ${it.locked?"disabled":""}></label></div>
@@ -290,7 +297,7 @@ function renderLayoutPane(){
     } else h += `<div class="empty">裝備庫還沒有東西，到「裝備庫」分頁新增。</div>`;
     h += `</div>`;
     const its = L.items.filter(i=>S.gear[i.gearId]);
-    if(its.length) h += `<div class="sec"><h3>物品清單</h3>${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${i.uid===U.sel?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西。點名稱可以選取。</div></div>`;
+    if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西。點名稱可以選取。</div></div>`;
     const counts = {}; L.items.forEach(i=>counts[i.gearId]=(counts[i.gearId]||0)+1);
     const rows = Object.entries(counts).filter(([gid])=>S.gear[gid]);
     if(rows.length) h += `<div class="sec"><h3>這張配置的清單</h3>${rows.map(([gid,n])=>`<div class="row"><span class="sw" style="background:${esc(S.gear[gid].color)}"></span><span style="flex:1">${esc(S.gear[gid].name)}</span><span class="mono">×${n}</span></div>`).join("")}</div>`;
@@ -346,7 +353,13 @@ $("#paneLayout").addEventListener("click", e => {
     if(!tgt) return; tgt.doors = tgt.doors || {}; const k=b.dataset.door; tgt.doors[k] = tgt.doors[k]==="open" ? "closed" : "open";
     saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); return; }
   if(b.dataset.lock && L){ const it=L.items.find(i=>i.uid===b.dataset.lock); if(it){ it.locked=!it.locked; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
-  if(b.dataset.pick && L){ U.sel = U.sel===b.dataset.pick ? null : b.dataset.pick; renderLayoutPane(); rebuildScene(); return; }
+  if(b.dataset.pick && L){ const id=b.dataset.pick; if(U.multiMode || e.shiftKey || e.ctrlKey || e.metaKey) toggleSel(id); else if(U.sel===id && selIds().length===1) clearSel(); else { U.sel=id; U.multi=[id]; } renderLayoutPane(); rebuildScene(); return; }
+  if(b.id==="mMode"){ U.multiMode=!U.multiMode; renderLayoutPane(); return; }
+  if(b.id==="mAll" && L){ U.multi=L.items.filter(i=>!i.locked && S.gear[i.gearId]).map(i=>i.uid); U.sel=U.multi[U.multi.length-1]||null; renderLayoutPane(); rebuildScene(); return; }
+  if(b.id==="mRot") return rotateGroup(90);
+  if(b.id==="mDup") return dupGroup();
+  if(b.id==="mDel") return delGroup();
+  if(b.id==="mNone"){ clearSel(); renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="iScreen"){ const it=selItem(); if(it){ it.on=!it.on; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.id==="iMute" && movieVideo){ movieVideo.muted=!movieVideo.muted; if(!movieVideo.paused||screensOn) movieVideo.play().catch(()=>{}); renderLayoutPane(); return; }
   if(b.id==="iFire"){ const it=selItem(); if(it){ it.fire=!it.fire; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
@@ -418,6 +431,16 @@ function addItem(gid){
   L.items.push(it); U.sel=it.uid; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene();
 }
 function selItem(){ const L=curLayout(); return L && L.items.find(i=>i.uid===U.sel); }
+function selIds(){ return U.sel && U.multi.includes(U.sel) && U.multi.length>1 ? U.multi.slice() : (U.sel ? [U.sel] : []); }
+function selItems(){ const L=curLayout(); if(!L) return []; const ids=selIds(); return L.items.filter(i=>ids.includes(i.uid)); }
+const isSel = uid => selIds().includes(uid);
+function clearSel(){ U.sel=null; U.multi=[]; }
+function toggleSel(id){ let m = selIds(); if(m.includes(id)){ m=m.filter(x=>x!==id); U.multi=m; U.sel=m[m.length-1]||null; } else { m.push(id); U.multi=m; U.sel=id; } }
+function moveSel(dx,dy){ selItems().filter(i=>!i.locked).forEach(i=>{ i.x+=dx; i.y+=dy; }); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function rotateGroup(d){ const its=selItems().filter(i=>!i.locked); if(!its.length) return; const cx=its.reduce((a,i)=>a+i.x,0)/its.length, cy=its.reduce((a,i)=>a+i.y,0)/its.length, r=d*Math.PI/180, c=Math.cos(r), sn=Math.sin(r);
+  its.forEach(i=>{ const x=i.x-cx, y=i.y-cy; i.x=Math.round(cx + x*c - y*sn); i.y=Math.round(cy + x*sn + y*c); i.rot=((i.rot+d)%360+360)%360; }); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function dupGroup(){ const L=curLayout(); const n=selItems().map(i=>({...JSON.parse(JSON.stringify(i)), uid:uid("i"), x:i.x+30, y:i.y+30, locked:false})); n.forEach(i=>L.items.push(i)); U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function delGroup(){ const L=curLayout(); const ids=selIds(); L.items=L.items.filter(i=>!ids.includes(i.uid)); clearSel(); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function rotateSel(d){ const it=selItem(); if(!it||it.locked) return; it.rot=((it.rot+d)%360+360)%360; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function dupSel(){ const it=selItem(); if(!it) return; const n={...it, uid:uid("i"), x:it.x+20, y:it.y+20}; curLayout().items.push(n); U.sel=n.uid; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function delSel(){ const L=curLayout(); if(!L||!U.sel) return; L.items=L.items.filter(i=>i.uid!==U.sel); U.sel=null; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
@@ -426,11 +449,18 @@ document.addEventListener("keydown", e => {
   if(isFP()) return;
   const it = selItem(); if(!it) return;
   const step = e.shiftKey ? 10 : 1;
+  if(selIds().length>1){
+    if(e.key==="r"||e.key==="R"){ rotateGroup(e.shiftKey?15:90); e.preventDefault(); }
+    else if(e.key==="Delete"||e.key==="Backspace"){ delGroup(); e.preventDefault(); }
+    else if(e.key.startsWith("Arrow")){ moveSel(e.key==="ArrowLeft"?-step:e.key==="ArrowRight"?step:0, e.key==="ArrowUp"?-step:e.key==="ArrowDown"?step:0); e.preventDefault(); }
+    else if(e.key==="Escape"){ clearSel(); rebuildScene(); renderLayoutPane(); }
+    return;
+  }
   if(it.locked && (e.key==="r"||e.key==="R"||e.key.startsWith("Arrow")||e.key==="Delete"||e.key==="Backspace")){ e.preventDefault(); return; }
   if(e.key==="r"||e.key==="R"){ rotateSel(e.shiftKey?15:90); e.preventDefault(); }
   else if(e.key==="Delete"||e.key==="Backspace"){ delSel(); e.preventDefault(); }
   else if(e.key.startsWith("Arrow")){ if(e.key==="ArrowLeft")it.x-=step; if(e.key==="ArrowRight")it.x+=step; if(e.key==="ArrowUp")it.y-=step; if(e.key==="ArrowDown")it.y+=step; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); e.preventDefault(); }
-  else if(e.key==="Escape"){ U.sel=null; rebuildScene(); renderLayoutPane(); }
+  else if(e.key==="Escape"){ clearSel(); rebuildScene(); renderLayoutPane(); }
 });
 
 /* ---------------- Three.js stage ---------------- */
@@ -641,12 +671,12 @@ function rebuildScene(){
     }
   }
   L.items.forEach(it => { const g=S.gear[it.gearId]; if(!g) return;
-    const grp = gearMesh(g, it.uid===U.sel, it.tent); grp.position.set(it.x,0,it.y); grp.rotation.y = -it.rot*Math.PI/180;
+    const grp = gearMesh(g, isSel(it.uid), it.tent); grp.position.set(it.x,0,it.y); grp.rotation.y = -it.rot*Math.PI/180;
     grp.userData.uid = it.uid; world.add(grp); itemGroups[it.uid]=grp;
     if(it.stand && g.stand){ grp.children.forEach(c=>c.position.y+=STAND_H); grp.add(makeStand(g)); }
     if(it.fire && g.cat==="焚火") grp.add(makeFire(g));
     if(it.on && g.shape==="screen") grp.traverse(o=>{ if(o.userData.screen){ o.material=movieMaterial(); const l=new THREE.PointLight(0x9fb8ff,.6,600,1.5); l.position.set(0,o.position.y,60); grp.add(l); screensOn++; } });
-    const el=document.createElement("div"); el.className="lbl"+(it.uid===U.sel?" sel":""); el.innerHTML=`${it.locked?"🔒 ":""}${it.fire&&g.cat==="焚火"?"🔥 ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.stand&&g.stand?STAND_H:0)+(it.fire&&g.cat==="焚火"?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
+    const el=document.createElement("div"); el.className="lbl"+(isSel(it.uid)?" sel":""); el.innerHTML=`${it.locked?"🔒 ":""}${it.fire&&g.cat==="焚火"?"🔥 ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.stand&&g.stand?STAND_H:0)+(it.fire&&g.cat==="焚火"?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
   });
 }
 let labelEls = {};
@@ -789,9 +819,13 @@ renderer.domElement.addEventListener("pointerdown", e => {
   setNdc(e); const id = pickItem();
   if(id){
     const it = curLayout().items.find(i=>i.uid===id); const p = groundPt();
-    drag = {it, ox: p? it.x-p.x:0, oz: p? it.y-p.z:0, moved:false, pid:e.pointerId};
+    const additive = e.shiftKey || e.ctrlKey || e.metaKey || U.multiMode;
+    if(additive){ const had=isSel(id); toggleSel(id); rebuildScene(); renderLayoutPane(); if(had){ e.stopImmediatePropagation(); e.preventDefault(); return; } }
+    else if(!isSel(id)){ U.sel=id; U.multi=[id]; rebuildScene(); renderLayoutPane(); }
+    else if(U.sel!==id){ U.sel=id; }
+    const others = selItems().filter(i=>i!==it && !i.locked).map(i=>({it:i, dx:i.x-it.x, dy:i.y-it.y}));
+    drag = {it, ox: p? it.x-p.x:0, oz: p? it.y-p.z:0, moved:false, pid:e.pointerId, others};
     topCtl.enabled=false; perCtl.enabled=false; renderer.domElement.setPointerCapture(e.pointerId);
-    if(U.sel!==id){ U.sel=id; rebuildScene(); renderLayoutPane(); }
     e.stopImmediatePropagation(); e.preventDefault();
   } else if(U.sel && U.view!=="3d") { downEmpty = {x:e.clientX,y:e.clientY}; }
   else downEmpty = {x:e.clientX,y:e.clientY};
@@ -805,11 +839,12 @@ renderer.domElement.addEventListener("pointermove", e => {
   drag.it.x = snapV(p.x+drag.ox, 5); drag.it.y = snapV(p.z+drag.oz, 5); drag.moved=true;
   const g = itemGroups[drag.it.uid]; if(g) g.position.set(drag.it.x,0,drag.it.y);
   const l = labelEls[drag.it.uid]; if(l){ l.x=drag.it.x; l.z=drag.it.y; }
+  (drag.others||[]).forEach(o=>{ o.it.x=drag.it.x+o.dx; o.it.y=drag.it.y+o.dy; const gg=itemGroups[o.it.uid]; if(gg) gg.position.set(o.it.x,0,o.it.y); const ll=labelEls[o.it.uid]; if(ll){ ll.x=o.it.x; ll.z=o.it.y; } });
 });
 function endDrag(e){
   if(FP.look){ FP.look=null; return; }
   if(drag){ const moved=drag.moved; drag=null; updateOverlay(); if(moved){ saveLayout(U.layoutId); renderLayoutPane(); } if(renderQueued){ renderQueued=false; renderAll(); } return; }
-  if(downEmpty && e && Math.hypot(e.clientX-downEmpty.x, e.clientY-downEmpty.y) < 4 && U.sel){ U.sel=null; rebuildScene(); renderLayoutPane(); }
+  if(downEmpty && e && Math.hypot(e.clientX-downEmpty.x, e.clientY-downEmpty.y) < 4 && U.sel && !U.multiMode){ clearSel(); rebuildScene(); renderLayoutPane(); }
   downEmpty=null;
 }
 renderer.domElement.addEventListener("pointerup", endDrag);
