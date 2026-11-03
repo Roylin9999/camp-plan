@@ -204,6 +204,7 @@ body.hideSide aside{display:none}
           <label><input type="checkbox" id="optSnap" checked> 對齊 5cm</label>
           <label><input type="checkbox" id="optLabels" checked> 顯示文字</label>
           <label><input type="checkbox" id="optGrid" checked> 格線</label>
+          <label class="roOnly" hidden style="white-space:nowrap">天空 <select id="roSky"></select></label>
           <label><input type="checkbox" id="optRoof" checked> 帳篷屋頂</label>
           <label>帳篷布 <input type="range" id="optFab" min="0" max="100" value="60" style="width:70px" aria-label="帳篷布不透明度"></label>
         </div>
@@ -1108,7 +1109,7 @@ function skyTexture(kind, col){
   const t=new THREE.CanvasTexture(c); if(THREE.sRGBEncoding) t.encoding=THREE.sRGBEncoding; skyTexCache[key]=t; return t;
 }
 function addSky(L, b, photo){
-  const show = !(photo || U.view==="top" || U.tab!=="layout"), kind = show ? (L.sky || "none") : "none", night = kind==="night";
+  const show = !(photo || U.view==="top" || U.tab!=="layout"), kind = show ? (U.skyView || L.sky || "none") : "none", night = kind==="night";
   hemi.intensity = night?0.32 : kind==="dusk"?0.5 : kind==="sunset"?0.7 : kind==="overcast"?0.8 : 0.85;
   sun.intensity  = night?0.12 : kind==="dusk"?0.25 : kind==="sunset"?0.55 : kind==="overcast"?0.3 : 0.6;
   sun.color.set(kind==="sunset"?"#FFC48A": night?"#9FB2FF":"#FFFFFF"); hemi.color.set(night?"#8FA2D8":"#FFFFFF");
@@ -1170,7 +1171,10 @@ function toggleSide(force){ if(landPhone.matches){ const on = force!==undefined 
   setTimeout(resize, 30); }
 try{ if(localStorage.getItem("campplan.hideSide")) document.body.classList.add("hideSide"); }catch(e){}
 $("#sideBtn").addEventListener("click", e => { e.stopPropagation(); toggleSide(); });
-if(RO){ $("#roBadge").hidden=false; $("#shareBtn").remove(); }
+if(RO){ $("#roBadge").hidden=false; $("#shareBtn").remove();
+  /* viewers can try other skies; this only changes their own screen and is never saved */
+  const sel=$("#roSky"); sel.innerHTML=`<option value="">配置圖預設</option>`+SKIES.filter(([k])=>k!=="color").map(([k,n])=>`<option value="${k}">${n}</option>`).join("");
+  sel.onchange=()=>{ U.skyView=sel.value||null; rebuildScene(); }; document.querySelectorAll(".roOnly").forEach(el=>el.hidden=false); }
 else $("#shareBtn").addEventListener("click", () => {
   const L=curLayout(); if(!L) return; const base=location.href.split("#")[0].split("?")[0], link=base+"?view="+encodeURIComponent(U.layoutId);
   const box=document.createElement("div"); box.className="shareBox";
