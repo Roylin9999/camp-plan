@@ -1,28 +1,17 @@
-/* ---- website cloud save (Firebase). Only used outside Claude, when firebase-config.js has a config. ---- */
+/* ---- website cloud save (Firebase). Only used outside Claude, when firebase-config.js has a config.
+   No sign-in: anyone with the link can view and edit (Roy's choice). ---- */
 async function fbInit(){
   if(!(window.FB_CONFIG && window.FB_CONFIG.apiKey && window.firebase)) return null;
   try{
     firebase.initializeApp(window.FB_CONFIG);
-    const raw = firebase.firestore(), auth = firebase.auth();
+    const raw = firebase.firestore();
     /* all data lives in collections named campplan_* so the Firebase project can be shared with other apps */
     const fs = { collection: c => raw.collection("campplan_" + c), batch: () => raw.batch() };
-    await new Promise(r => { const off = auth.onAuthStateChanged(() => { off(); r(); }); });
-    auth.getRedirectResult().catch(()=>{});
-    const ui = () => {
-      let b = document.getElementById("fbLogin");
-      if(!b){ b = document.createElement("button"); b.id="fbLogin"; b.className="btn"; b.style.marginLeft="8px"; document.querySelector("header").appendChild(b);
-        b.onclick = () => { if(auth.currentUser) return auth.signOut(); const p = new firebase.auth.GoogleAuthProvider();
-          auth.signInWithPopup(p).catch(e => { if(/popup|operation-not-supported|web-storage/i.test(e.code||"")) auth.signInWithRedirect(p); else alert("登入失敗：" + (e.code||e.message)); }); }; }
-      b.textContent = auth.currentUser ? "登出" : "登入（才能存檔）";
-      b.className = auth.currentUser ? "btn" : "btn primary";
-    };
-    ui();
-    auth.onAuthStateChanged(u => { ui(); if(u) fbSyncSeed(fs).catch(e => console.warn("seed", e)); if(S.ready) setStatus(u?"ok":"warn", u?"已同步到雲端":"未登入：可以看，但改動不會存"); });
-    fbSyncSeed.auth = auth;
+    fbSyncSeed(fs).catch(e => console.warn("seed", e));
     return fs;
   }catch(e){ console.warn("firebase", e); return null; }
 }
-/* first sign-in fills the cloud from seed.json (+ this browser's saved layouts); a newer seedVersion adds new gear */
+/* first visit fills the cloud from seed.json (+ this browser's saved layouts); a newer seedVersion adds new gear */
 async function fbSyncSeed(fs){
   const j = await (await fetch("data/seed.json",{cache:"no-cache"})).json(); const sv = j.seedVersion||1;
   const meta = await fs.collection("meta").doc("seed").get(); const cur = meta.exists ? (meta.data().v||0) : 0;
