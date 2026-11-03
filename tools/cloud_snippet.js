@@ -18,8 +18,8 @@ async function fbInit(){
       batch: () => { const b = raw.batch(); return { set: (ref, d) => b.set(ref._raw, enc(d)), commit: () => b.commit() }; }
     };
     /* fill the cloud before showing it; if the cloud can't be reached or written, stay on this browser's copy */
-    await fbSyncSeed(fs);
-    await fbUploadLocal(fs);
+    const fbRO=/[?#&]view=/.test(location.search+location.hash); /* view-only share link: never write */
+    if(!fbRO){ await fbSyncSeed(fs); await fbUploadLocal(fs); }
     return fs;
   }catch(e){ console.warn("firebase", e); fbInit.err = (e && (e.code || e.message)) || "unknown"; return null; }
 }

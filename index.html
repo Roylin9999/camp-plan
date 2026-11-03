@@ -29,6 +29,16 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-siz
 button,input,select,textarea{font:inherit;color:inherit}
 .app{height:100%;display:grid;grid-template-rows:auto 1fr;}
 header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.shareBtn{margin-left:auto;background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:6px 12px;font-weight:700;font-size:13px;cursor:pointer}
+.shareBtn + .status,.roBadge + .status{margin-left:0}
+.roBadge{margin-left:auto;font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px 10px}
+.roBadge[hidden]{display:none}
+body.viewOnly aside,body.viewOnly #sideBtn,body.viewOnly #shareBtn{display:none!important}
+body.viewOnly main{grid-template-columns:1fr}
+body.viewOnly label:has(#optSnap){display:none}
+.shareBox{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.shareBox>div{background:var(--panel);color:var(--ink);border-radius:12px;padding:16px;max-width:460px;width:100%;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.shareBox input{width:100%;font:13px var(--font-mono);padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
 header h1{margin:0;font-size:19px;font-weight:900;letter-spacing:.08em}
 header .sub{color:var(--muted);font-size:12px}
 .status{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
@@ -162,6 +172,8 @@ body.hideSide aside{display:none}
   <header>
     <h1>露營平配</h1>
     <span class="sub">單位：公分 · 1 格 = 50 cm</span>
+    <span class="roBadge" id="roBadge" hidden>👁 唯讀檢視</span>
+    <button class="shareBtn" id="shareBtn" title="產生只能觀看的分享連結">🔗 分享</button>
     <span class="status"><span class="dot" id="stDot"></span><span id="stText">連線中…</span></span>
   </header>
   <main>
@@ -260,7 +272,10 @@ function lsSave(){ if(S.mode!=="local") return; try{ localStorage.setItem(LS_KEY
 function setStatus(kind, text){ $("#stDot").className = "dot " + kind; $("#stText").textContent = text; }
 
 const pending = {};
-function writeDoc(col, id, data){
+/* view-only share links: ?view=<layoutId> (or #view=<layoutId>) opens one layout with every editing control hidden and nothing saved */
+const RO = (()=>{ try{ const q=new URLSearchParams(location.search).get("view"); if(q) return q; const m=location.hash.match(/view=([\w-]+)/); return m?m[1]:null; }catch(e){ return null; } })();
+if(RO){ document.body.classList.add("viewOnly","hideSide"); }
+function writeDoc(col, id, data){ if(RO) return;
   if(S.mode==="db"){
     clearTimeout(pending[col+id]);
     pending[col+id] = setTimeout(() => {
@@ -268,7 +283,7 @@ function writeDoc(col, id, data){
     }, 250);
   } else lsSave();
 }
-function deleteDoc(col, id){
+function deleteDoc(col, id){ if(RO) return;
   if(S.mode==="db") S.db.collection(col).doc(id).delete().catch(()=>setStatus("warn","刪除失敗"));
   else lsSave();
 }
@@ -302,8 +317,8 @@ async function fbInit(){
       batch: () => { const b = raw.batch(); return { set: (ref, d) => b.set(ref._raw, enc(d)), commit: () => b.commit() }; }
     };
     /* fill the cloud before showing it; if the cloud can't be reached or written, stay on this browser's copy */
-    await fbSyncSeed(fs);
-    await fbUploadLocal(fs);
+    const fbRO=/[?#&]view=/.test(location.search+location.hash); /* view-only share link: never write */
+    if(!fbRO){ await fbSyncSeed(fs); await fbUploadLocal(fs); }
     return fs;
   }catch(e){ console.warn("firebase", e); fbInit.err = (e && (e.code || e.message)) || "unknown"; return null; }
 }
@@ -361,7 +376,7 @@ async function initStore(){
 /* ---------------- UI state ---------------- */
 const U = { showRoof:true, fabricOp:.6, tab:"layout", layoutId:null, sel:null, multi:[], multiMode:false, gearSel:null, view:"top", snap:true, labels:true, armed:null };
 try { const p = JSON.parse(localStorage.getItem("campplan.ui")||"{}"); if(p.layoutId) U.layoutId=p.layoutId; if(p.view==="top"||p.view==="3d") U.view=p.view; if(typeof p.showRoof==="boolean") U.showRoof=p.showRoof; if(typeof p.fabricOp==="number") U.fabricOp=p.fabricOp; } catch(e){}
-function saveUI(){ try{ localStorage.setItem("campplan.ui", JSON.stringify({layoutId:U.layoutId, view:U.view, showRoof:U.showRoof, fabricOp:U.fabricOp})); }catch(e){} }
+function saveUI(){ if(RO) return; try{ localStorage.setItem("campplan.ui", JSON.stringify({layoutId:U.layoutId, view:U.view, showRoof:U.showRoof, fabricOp:U.fabricOp})); }catch(e){} }
 
 const gearList = () => Object.entries(S.gear).sort((a,b)=> (CATS.indexOf(a[1].cat)-CATS.indexOf(b[1].cat)) || String(a[1].name).localeCompare(String(b[1].name),"zh-Hant"));
 const layoutList = () => Object.entries(S.layouts).sort((a,b)=> (a[1].kind===b[1].kind?0:(a[1].kind==="site"?-1:1)) || String(a[1].name).localeCompare(String(b[1].name),"zh-Hant"));
@@ -377,6 +392,7 @@ function dimsTxt(g){ return `${g.w}×${g.d}×${g.h}`; }
 let renderQueued = false;
 function scheduleRender(){ if(drag) { renderQueued = true; return; } renderAll(); }
 function renderAll(){
+  if(RO){ U.layoutId=RO; U.tab="layout"; U.sel=null; U.multi=[]; }
   if(!S.layouts[U.layoutId]) U.layoutId = (layoutList()[0]||[])[0] || null;
   renderLayoutPane(); renderGearPane(); rebuildScene(); updateOverlay();
 }
@@ -651,6 +667,7 @@ function rotateSel(d){ const it=selItem(); if(!it||it.locked) return; it.rot=((i
 function dupSel(){ const it=selItem(); if(!it) return; const n={...JSON.parse(JSON.stringify(it)), uid:uid("i"), x:it.x+20, y:it.y+20, locked:false}; delete n.grp; curLayout().items.push(n); U.sel=n.uid; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function delSel(){ const L=curLayout(); if(!L||!U.sel) return; L.items=L.items.filter(i=>i.uid!==U.sel); U.sel=null; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 document.addEventListener("keydown", e => {
+  if(RO) return;
   if(e.target.closest("input,select,textarea")) return; if(U.tab!=="layout") return;
   if(isFP()) return;
   const mod=e.ctrlKey||e.metaKey, k=(e.key||"").toLowerCase();
@@ -974,7 +991,7 @@ function rebuildScene(){
     if(it.on && g.shape==="screen") grp.traverse(o=>{ if(o.userData.screen){ const yid=ytId(it.yt!==undefined?it.yt:g.yt);
       if(yid && !movieVideo && cssR){ o.material=new THREE.MeshBasicMaterial({color:0x000000, opacity:0, blending:THREE.NoBlending, side:THREE.DoubleSide}); ytWanted.push({uid:it.uid, id:yid, mesh:o, w:o.geometry.parameters.width, h:o.geometry.parameters.height}); }
       else o.material=movieMaterial(); const l=new THREE.PointLight(0x9fb8ff,.6,600,1.5); l.position.set(0,o.position.y,60); grp.add(l); screensOn++; } });
-    const el=document.createElement("div"); el.className="lbl"+(isSel(it.uid)?" sel":""); el.innerHTML=`${it.locked?"🔒 ":""}${it.fire&&isPit(g)?(it.fire==="smoke"?"🔥💨 ":"🔥 "):""}${it.boil&&g.shape==="hotpot"?"♨️ ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.elev||0)+(it.stand&&g.stand?STAND_H:0)+(it.fire&&isPit(g)?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
+    const el=document.createElement("div"); el.className="lbl"+(isSel(it.uid)?" sel":""); el.innerHTML=`${it.locked&&!RO?"🔒 ":""}${it.fire&&isPit(g)?(it.fire==="smoke"?"🔥💨 ":"🔥 "):""}${it.boil&&g.shape==="hotpot"?"♨️ ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.elev||0)+(it.stand&&g.stand?STAND_H:0)+(it.fire&&isPit(g)?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
   });
 }
 let labelEls = {};
@@ -1116,6 +1133,16 @@ function toggleSide(force){ if(landPhone.matches){ const on = force!==undefined 
   setTimeout(resize, 30); }
 try{ if(localStorage.getItem("campplan.hideSide")) document.body.classList.add("hideSide"); }catch(e){}
 $("#sideBtn").addEventListener("click", e => { e.stopPropagation(); toggleSide(); });
+if(RO){ $("#roBadge").hidden=false; $("#shareBtn").remove(); }
+else $("#shareBtn").addEventListener("click", () => {
+  const L=curLayout(); if(!L) return; const base=location.href.split("#")[0].split("?")[0], link=base+"?view="+encodeURIComponent(U.layoutId);
+  const box=document.createElement("div"); box.className="shareBox";
+  box.innerHTML=`<div role="dialog" aria-label="分享"><strong>分享「${esc(L.name||"配置圖")}」</strong><div class="help">拿到這個連結的人只能觀看（俯視、3D、人物視角都可以），看不到任何修改的按鈕，也不會改到資料。</div><input readonly value="${esc(link)}"><div class="row"><button class="btn primary" data-a="copy">📋 複製連結</button>${navigator.share?`<button class="btn" data-a="send">📤 傳送…</button>`:""}<button class="btn" data-a="close">關閉</button></div></div>`;
+  document.body.appendChild(box); const inp=box.querySelector("input"); inp.focus(); inp.select();
+  box.addEventListener("click", async e => { const a=e.target.dataset && e.target.dataset.a; if(e.target===box || a==="close") return box.remove();
+    if(a==="copy"){ let ok=false; try{ await navigator.clipboard.writeText(link); ok=true; }catch(err){ inp.select(); try{ ok=document.execCommand("copy"); }catch(e2){} } e.target.textContent = ok?"✅ 已複製":"請長按連結複製"; }
+    if(a==="send"){ try{ await navigator.share({title:"露營平配："+(L.name||""), url:link}); }catch(err){} } });
+});
 $("#sideShade").addEventListener("click", () => toggleSide(false));
 $("#sideClose").addEventListener("click", () => toggleSide(false));
 $("#tbBtn").addEventListener("click", () => document.body.classList.toggle("tbOpen"));
@@ -1174,7 +1201,7 @@ function pickItem(withLocked){
 }
 renderer.domElement.addEventListener("pointerdown", e => {
   if(isFP()){ FP.look={x:e.clientX, y:e.clientY, yaw:FP.yaw, pitch:FP.pitch}; renderer.domElement.setPointerCapture(e.pointerId); e.stopImmediatePropagation(); e.preventDefault(); return; }
-  if(U.tab!=="layout" || !curLayout() || e.button!==0) return;
+  if(RO || U.tab!=="layout" || !curLayout() || e.button!==0) return;
   if(U.placing){ setNdc(e); const p=groundPt(); if(p) placeSelAt(p); else { U.placing=false; renderLayoutPane(); } e.stopImmediatePropagation(); e.preventDefault(); return; }
   setNdc(e); const id = pickItem();
   if(id){
@@ -1193,7 +1220,7 @@ renderer.domElement.addEventListener("pointerdown", e => {
 let downEmpty = null;
 /* double-click selects even a locked item (it still can't be moved, but Delete removes it) */
 renderer.domElement.addEventListener("dblclick", e => {
-  if(isFP() || U.tab!=="layout" || !curLayout() || U.placing) return;
+  if(RO || isFP() || U.tab!=="layout" || !curLayout() || U.placing) return;
   setNdc(e); const id = pickItem(true); if(!id) return;
   if(e.shiftKey || e.ctrlKey || e.metaKey || U.multiMode){ if(!isSel(id)) toggleSel(id); } else selectOne(id);
   downEmpty=null; rebuildScene(); renderLayoutPane(); e.preventDefault();
