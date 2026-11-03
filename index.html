@@ -337,6 +337,7 @@ function renderLayoutPane(){
       <div class="row"><button class="btn" id="mRot">整組轉 90°</button><button class="btn" id="mDup">複製</button><button class="btn danger" id="mDel">移除</button><button class="btn" id="mNone">取消選取</button></div>
       <div class="row" style="flex-wrap:wrap;gap:6px"><span class="help" style="margin:0;align-self:center">複製到</span><button class="btn" data-cp="L">⬅ 左邊</button><button class="btn" data-cp="R">右邊 ➡</button><button class="btn" data-cp="U">⬆ 上面</button><button class="btn" data-cp="D">⬇ 下面</button><button class="btn" data-cp="ML">⇋ 左鏡像</button><button class="btn" data-cp="MR">⇋ 右鏡像</button></div>
       <div class="row"><button class="btn ${U.placing?"primary":""}" id="cpPlace">${U.placing?"📍 點畫面要放的位置…（再按取消）":"📍 移到點選的位置"}</button></div>
+      ${Object.keys(S.layouts).length>1?`<div class="row"><label class="f">複製到其他配置圖<select id="cpLayout">${Object.entries(S.layouts).filter(([id])=>id!==U.layoutId).map(([id,l])=>`<option value="${esc(id)}">${l.kind==="tent"?"帳內｜":"營位｜"}${esc(l.name)}</option>`).join("")}</select></label><button class="btn" id="cpToLayout" style="align-self:flex-end">複製過去</button></div>`:""}
       <div class="help">「複製到」會照原本的相對位置複製一份放在旁邊，「鏡像」會左右翻轉排列方向。複製出來的那份會自動選取，可以直接拖曳整組，或按「📍」再點畫面放到指定位置。快捷鍵：<kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd>。</div>
       <div class="help">拖曳其中一件，整組會一起移動。方向鍵一起微調、<kbd>R</kbd> 整組轉向、<kbd>Esc</kbd> 取消。</div></div>`;
     } else if(it && g){
@@ -360,6 +361,7 @@ function renderLayoutPane(){
       <div class="row"><button class="btn" id="iRot" ${it.locked?"disabled":""}>轉 90°</button><button class="btn" id="iDup">複製</button><button class="btn danger" id="iDel">移除</button></div>
       <div class="row" style="flex-wrap:wrap;gap:6px"><span class="help" style="margin:0;align-self:center">複製到</span><button class="btn" data-cp="L">⬅ 左邊</button><button class="btn" data-cp="R">右邊 ➡</button><button class="btn" data-cp="U">⬆ 上面</button><button class="btn" data-cp="D">⬇ 下面</button><button class="btn" data-cp="ML">⇋ 左鏡像</button><button class="btn" data-cp="MR">⇋ 右鏡像</button></div>
       <div class="row"><button class="btn ${U.placing?"primary":""}" id="cpPlace">${U.placing?"📍 點畫面要放的位置…（再按取消）":"📍 移到點選的位置"}</button></div>
+      ${Object.keys(S.layouts).length>1?`<div class="row"><label class="f">複製到其他配置圖<select id="cpLayout">${Object.entries(S.layouts).filter(([id])=>id!==U.layoutId).map(([id,l])=>`<option value="${esc(id)}">${l.kind==="tent"?"帳內｜":"營位｜"}${esc(l.name)}</option>`).join("")}</select></label><button class="btn" id="cpToLayout" style="align-self:flex-end">複製過去</button></div>`:""}
       <div class="help">「複製到」會照原本的相對位置複製一份放在旁邊，「鏡像」會左右翻轉排列方向。複製出來的那份會自動選取，可以直接拖曳整組，或按「📍」再點畫面放到指定位置。快捷鍵：<kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd>。</div>
       <div class="help">X、Y 是物品中心點，距離${L.kind==="tent"?"帳篷":"營位"}左上角。<kbd>R</kbd> 轉 90°、<kbd>Shift</kbd>+<kbd>R</kbd> 轉 15°、方向鍵微調 1cm、<kbd>Del</kbd> 移除。</div></div>`;
     }
@@ -436,6 +438,7 @@ $("#paneLayout").addEventListener("click", e => {
   if(b.id==="mRot") return rotateGroup(90);
   if(b.id==="mDup") return dupGroup();
   if(b.dataset.cp) return copyTo(b.dataset.cp);
+  if(b.id==="cpToLayout"){ const sel=$("#cpLayout"); if(sel) copyToLayout(sel.value); return; }
   if(b.id==="cpPlace"){ U.placing=!U.placing; renderLayoutPane(); return; }
   if(b.id==="mDel") return delGroup();
   if(b.id==="mNone"){ clearSel(); renderLayoutPane(); rebuildScene(); return; }
@@ -536,6 +539,13 @@ function copyTo(dir){ const its=selItems(); if(!its.length) return; const b=grou
   if(dir==="ML"||dir==="MR"){ const ax = dir==="MR" ? b.x1+gap/2 : b.x0-gap/2; return pasteItems(its,(c,i)=>{ c.x=2*ax-i.x; c.rot=((360-i.rot)%360+360)%360; if(c.tent&&c.tent.doors){ const d=c.tent.doors, m={}; Object.keys(d).forEach(k=>{ const k2=k.replace(/^L/,"\u0001").replace(/^R/,"L").replace(/^\u0001/,"R"); m[k2]=d[k]; }); c.tent.doors=m; } }); }
   const dx = dir==="L"?-W:dir==="R"?W:0, dy = dir==="U"?-D:dir==="D"?D:0;
   pasteItems(its,(c,i)=>{ c.x=i.x+dx; c.y=i.y+dy; }); }
+/* copy the selection into another layout, same arrangement; keep positions if they fit, otherwise centre the group */
+function copyToLayout(tid){ const T=S.layouts[tid], its=selItems(); if(!T||!its.length) return;
+  const bx=groupBox(its), lim=layoutBounds(T);
+  let dx=0, dy=0; if((bx.x0<lim.x0 || bx.x1>lim.x1 || bx.y0<lim.z0 || bx.y1>lim.z1)){ dx=(lim.x0+lim.x1)/2-(bx.x0+bx.x1)/2; dy=(lim.z0+lim.z1)/2-(bx.y0+bx.y1)/2; }
+  const n=its.map(i=>{ const c=JSON.parse(JSON.stringify(i)); c.uid=uid("i"); c.locked=false; c.x=Math.round(i.x+dx); c.y=Math.round(i.y+dy); return c; });
+  T.items=(T.items||[]).concat(n); saveLayout(tid);
+  U.layoutId=tid; U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; U.armed=null; saveUI(); renderAll(); fitView(); }
 function placeSelAt(p){ const its=selItems().filter(i=>!i.locked); if(!its.length) return; const b=groupBox(its), cx=(b.x0+b.x1)/2, cy=(b.y0+b.y1)/2; its.forEach(i=>{ i.x=snapV(i.x+p.x-cx,5); i.y=snapV(i.y+p.z-cy,5); }); U.placing=false; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function delGroup(){ const L=curLayout(); const ids=selIds(); L.items=L.items.filter(i=>!ids.includes(i.uid)); clearSel(); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function rotateSel(d){ const it=selItem(); if(!it||it.locked) return; it.rot=((it.rot+d)%360+360)%360; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
