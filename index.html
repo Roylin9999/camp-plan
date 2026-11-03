@@ -91,6 +91,19 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .overlay .empty{background:var(--panel);pointer-events:auto;max-width:320px;text-align:center}
 .photo{position:absolute;right:10px;bottom:10px;z-index:3;width:min(280px,calc(100% - 20px));background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:12px;max-height:calc(100% - 70px);overflow:auto}
 .photo input[type=range]{width:100%}
+/* phone 人物/自由 controls: game-style translucent joystick on the right, round action buttons on the left */
+.fpTouch{position:absolute;inset:0;z-index:3;pointer-events:none;user-select:none;-webkit-user-select:none}
+.fpTouch[hidden]{display:none}
+.fpAct{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:16px;display:flex;flex-direction:column-reverse;gap:10px;pointer-events:auto}
+.fpRound{width:58px;height:58px;border-radius:50%;border:1.5px solid rgba(255,255,255,.55);background:rgba(20,25,22,.38);color:#fff;font-size:20px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;touch-action:none;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.fpRound span{font-size:10px;font-weight:700}
+.fpRound[aria-pressed="true"],.fpRound.on{background:rgba(76,175,130,.7);border-color:#fff}
+.joy{position:absolute;right:max(26px,env(safe-area-inset-right,0px));bottom:22px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.10) 0 55%,rgba(255,255,255,.22) 56% 100%);border:2px solid rgba(255,255,255,.5);pointer-events:auto;touch-action:none;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.joyKnob{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(255,255,255,.55);border:2px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .12s}
+.joy.on .joyKnob{transition:none;background:rgba(255,255,255,.75)}
+.joyHint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:11px;color:#fff;background:rgba(0,0,0,.35);padding:3px 10px;border-radius:12px;white-space:nowrap;transition:opacity .6s}
+body.touchFP .fp{display:none!important}
+body.touchFP #hud{display:none}
 .fp{position:absolute;right:10px;bottom:10px;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;font-size:12px;align-items:center;user-select:none;-webkit-user-select:none;max-width:calc(100% - 20px)}
 .fpHelp{color:var(--muted,#777);line-height:1.5;max-width:220px}
 .fpPad{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
@@ -184,6 +197,17 @@ body.hideSide aside{display:none}
       </div>
       <div class="labels" id="labels"></div>
       <div class="hud" id="hud"><div class="scale" id="scale"><div class="bar" id="scaleBar"></div><span id="scaleTxt">100 cm</span></div><div class="coord" id="coord">X — · Y —</div></div>
+      <div class="fpTouch" id="fpTouch" hidden>
+        <div class="fpAct" id="fpAct">
+          <button class="fpRound" data-pose="stand" aria-pressed="true">🧍<span>站</span></button>
+          <button class="fpRound" data-pose="sit" aria-pressed="false">🪑<span>坐下</span></button>
+          <button class="fpRound" data-pose="lie" aria-pressed="false">🛌<span>躺下</span></button>
+          <button class="fpRound" data-k="up" aria-label="上升">⬆<span>升</span></button>
+          <button class="fpRound" data-k="down" aria-label="下降">⬇<span>降</span></button>
+        </div>
+        <div class="joy" id="joy" aria-label="移動搖桿"><div class="joyKnob" id="joyKnob"></div></div>
+        <div class="joyHint" id="joyHint">右邊搖桿移動・拖曳畫面看四周</div>
+      </div>
       <div class="fp" id="fpPanel" hidden>
         <div class="fpHelp" id="fpHelp"></div>
         <div class="fpPad">
@@ -1117,7 +1141,7 @@ function updateOverlay(){
   m.textContent = msg; o.hidden = !msg;
   topCtl.enabled = U.tab==="layout" && U.view==="top"; perCtl.enabled = U.tab==="gear" || U.view==="3d";
   $("#hud").hidden = U.tab==="gear"; $("#photoPanel").hidden = !(U.tab==="layout" && U.view==="photo");
-  $("#fpPanel").hidden = !isFP(); if(isFP()) fpPanelUI();
+  $("#fpPanel").hidden = !isFP(); if(isFP()) fpPanelUI(); touchUI();
 }
 
 /* photo mode */
@@ -1206,7 +1230,24 @@ const POSE_EYE = {sit:105, lie:28};
 function eyeH(){ return POSE_EYE[FP.pose] || FP.eye; }
 function setPose(p){ const was=FP.pose; FP.pose=p; FP.y=eyeH();
   if(p==="lie") FP.pitch=0.75; else if(was==="lie") FP.pitch=-0.08;
-  document.querySelectorAll("#fpPose [data-pose]").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.pose===p))); fpApply(); }
+  document.querySelectorAll("[data-pose]").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.pose===p))); fpApply(); }
+$("#fpAct").addEventListener("click", e => { const b=e.target.closest("[data-pose]"); if(b) setPose(b.dataset.pose); });
+/* joystick: drag the knob; up = forward, sideways = step left/right, further = faster */
+FP.joy={f:0,st:0};
+(function(){ const J=$("#joy"), K=$("#joyKnob"), R=75; let id=null, cx=0, cy=0;
+  const set=(dx,dy)=>{ const d=Math.hypot(dx,dy), m=Math.min(1,d/R)/(d||1); const x=dx*m*R, y=dy*m*R; K.style.transform=`translate(${x}px,${y}px)`; FP.joy={f:-y/R, st:x/R}; };
+  J.addEventListener("pointerdown", e=>{ e.preventDefault(); e.stopPropagation(); id=e.pointerId; J.setPointerCapture(id); const r=J.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; J.classList.add("on"); set(e.clientX-cx,e.clientY-cy); const h=$("#joyHint"); if(h) h.style.opacity="0"; });
+  J.addEventListener("pointermove", e=>{ if(e.pointerId!==id) return; set(e.clientX-cx,e.clientY-cy); });
+  const end=e=>{ if(e.pointerId!==id) return; id=null; J.classList.remove("on"); K.style.transform=""; FP.joy={f:0,st:0}; };
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>J.addEventListener(ev,end));
+  const A=$("#fpAct");
+  A.addEventListener("pointerdown", e=>{ const b=e.target.closest("[data-k]"); if(!b) return; e.preventDefault(); FP.keys[b.dataset.k]=true; b.classList.add("on"); b.setPointerCapture(e.pointerId); });
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>A.addEventListener(ev, e=>{ const b=e.target.closest("[data-k]"); if(!b) return; FP.keys[b.dataset.k]=false; b.classList.remove("on"); }));
+})();
+const coarse = matchMedia("(pointer:coarse)");
+function touchUI(){ const on = isFP() && coarse.matches; document.body.classList.toggle("touchFP", on); $("#fpTouch").hidden=!on;
+  if(on){ const walk=U.view==="walk"; document.querySelectorAll("#fpAct [data-pose]").forEach(b=>b.hidden=!walk); document.querySelectorAll("#fpAct [data-k]").forEach(b=>b.hidden=walk); } }
+coarse.addEventListener && coarse.addEventListener("change", touchUI);
 $("#fpPose").addEventListener("click", e => { const b=e.target.closest("[data-pose]"); if(b) setPose(b.dataset.pose); });
 function fpPanelUI(){
   const walk = U.view==="walk";
@@ -1232,6 +1273,7 @@ function fpStep(){
   if(k.left) FP.yaw+=turn; if(k.right) FP.yaw-=turn;
   const fx=-Math.sin(FP.yaw), fz=-Math.cos(FP.yaw), rx=Math.cos(FP.yaw), rz=-Math.sin(FP.yaw);
   let f=(k.fwd?1:0)-(k.back?1:0), st=(k.sr?1:0)-(k.sl?1:0);
+  if(FP.joy && (FP.joy.f||FP.joy.st)){ const m=Math.hypot(FP.joy.f,FP.joy.st), boost=m>0.92?1.8:1; f+=FP.joy.f*boost; st+=FP.joy.st*boost; }
   if(walk){ FP.x+=(fx*f+rx*st)*sp; FP.z+=(fz*f+rz*st)*sp; FP.y=eyeH(); }
   else { const cp=Math.cos(FP.pitch); FP.x+=(fx*cp*f+rx*st)*sp; FP.z+=(fz*cp*f+rz*st)*sp; FP.y+=Math.sin(FP.pitch)*f*sp + ((k.up?1:0)-(k.down?1:0))*sp; FP.y=Math.max(20,FP.y); }
   fpApply();
