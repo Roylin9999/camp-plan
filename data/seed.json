@@ -1,0 +1,539 @@
+{
+ "gear": {
+  "g_foldbox55": {
+   "cat": "收納",
+   "color": "#1C1C1C",
+   "d": 36,
+   "h": 30,
+   "model": "models/g_foldbox55.glb",
+   "name": "摺疊收納箱 55L",
+   "notes": "黑化側開門摺疊箱 55L：50×36×30cm",
+   "shape": "box",
+   "stand": true,
+   "w": 50
+  },
+  "g_bed": {
+   "cat": "寢具",
+   "color": "#1F1F1F",
+   "d": 105,
+   "h": 43,
+   "model": "models/g_bed.glb",
+   "name": "怡婷的床（云磐懸浮床）",
+   "notes": "TAKIBI 云磐懸浮床 TPU：充氣 200×105×20cm，高腳模式整體高 43cm，11.78kg",
+   "shape": "cot",
+   "t": 20,
+   "w": 200
+  },
+  "g_table": {
+   "cat": "桌椅",
+   "color": "#D98A3A",
+   "d": 240,
+   "h": 70,
+   "name": "長桌（草圖估計）",
+   "notes": "尺寸依草圖估計，請改成實際尺寸",
+   "shape": "table",
+   "w": 60
+  },
+  "g_hichair": {
+   "cat": "桌椅",
+   "color": "#232323",
+   "d": 64,
+   "h": 76,
+   "model": "models/g_hichair.glb",
+   "name": "CAMPFIRE 戰壘高背露營椅",
+   "notes": "官方：面寬64cm。最低段前高25／後高76（第一段36／90、第二段39／93、第三段42／96），2.1kg，黑色。深度依照片估計",
+   "shape": "chair",
+   "w": 64
+  },
+  "g_kitchen_z": {
+   "cat": "廚房",
+   "color": "#222222",
+   "d": 60,
+   "h": 84.5,
+   "model": "models/g_kitchen_z.glb",
+   "name": "廚桌（Z 型桌架）",
+   "notes": "官方尺寸 104.5×60×84.5cm，Z 型桌架、下層有收納盒",
+   "shape": "table",
+   "w": 104.5
+  },
+  "g_foldbox": {
+   "cat": "收納",
+   "color": "#1C1C1C",
+   "d": 36,
+   "h": 24,
+   "model": "models/g_foldbox.glb",
+   "name": "摺疊收納箱 45L",
+   "notes": "黑化側開門摺疊箱 45L：50×36×24cm",
+   "shape": "box",
+   "stand": true,
+   "w": 50
+  },
+  "g_igt": {
+   "cat": "廚房",
+   "color": "#262626",
+   "d": 75,
+   "h": 65,
+   "model": "models/g_igt.glb",
+   "name": "FIRE WILD 五單元 IGT 桌",
+   "notes": "官方規格：展開 136×75cm，桌腳無段升降 42–65cm（目前設最高 65），8.8kg，桌板厚 1.5mm，附雙鉤燈架",
+   "shape": "table",
+   "w": 136
+  },
+  "g_screen150": {
+   "cat": "影音",
+   "color": "#1E1E1E",
+   "d": 70,
+   "h": 260,
+   "name": "150吋投影布幕",
+   "notes": "150 吋 16:9 畫面約 332×187cm，含支架總寬約 340cm、高 260cm（支架尺寸為估計）。選取後按「打開布幕播電影」",
+   "shape": "screen",
+   "w": 340
+  },
+  "g_container": {
+   "cat": "環境",
+   "color": "#2F5DA8",
+   "d": 600,
+   "h": 260,
+   "name": "藍色貨櫃（營區）",
+   "notes": "營區後方藍色貨櫃，尺寸估計",
+   "shape": "box",
+   "w": 240
+  },
+  "g_fire": {
+   "cat": "焚火",
+   "color": "#2A2A2A",
+   "d": 40.5,
+   "h": 29,
+   "model": "models/g_fire.glb",
+   "name": "CARGO 焚火台",
+   "notes": "CARGO 不鏽鋼焚火爐（好勢露營）。尺寸沿用同款 C.C. Fire Pit MAX 規格：展開約 40.5×40.5×29cm，收納 41×41×15cm，約 6kg。實品為六角形，模型用圓柱代表",
+   "shape": "cylinder",
+   "w": 40.5
+  },
+  "g_sofa": {
+   "cat": "寢具",
+   "color": "#2B2B2B",
+   "d": 160,
+   "h": 65,
+   "model": "models/g_sofa.glb",
+   "name": "塔吉比 云境雙人沙發床",
+   "notes": "TAKIBI 官方規格：沙發床 200×160×65cm（底座床墊 30cm 高）。上面是 H 型充氣靠背 186×100×35cm，前後兩邊各有 60cm 座深，可以兩面坐。黑色，8.29kg",
+   "seat": 60,
+   "shape": "sofa",
+   "t": 30,
+   "w": 200
+  },
+  "g_jspace": {
+   "cat": "車輛",
+   "color": "#F0F1EE",
+   "d": 432,
+   "h": 195.5,
+   "model": "models/g_jspace.glb",
+   "name": "中華 J Space 廂型車",
+   "notes": "官方規格：長 4165 × 寬 1685 × 高 1955 mm，軸距 2610 mm。佔地尺寸含後照鏡（寬 188.5）和前防撞桿（長 432）。車頭朝畫面上方（-Y）",
+   "shape": "box",
+   "w": 188.5
+  },
+  "g_tree_big": {
+   "cat": "環境",
+   "color": "#3F6B45",
+   "d": 70,
+   "h": 1500,
+   "name": "大樹（營區左前）",
+   "notes": "照片左前方的大樹，尺寸估計",
+   "shape": "tree",
+   "w": 70
+  },
+  "g_sink": {
+   "cat": "環境",
+   "color": "#C9CDD1",
+   "d": 55,
+   "h": 85,
+   "name": "不鏽鋼水槽（營區）",
+   "notes": "營區設施，尺寸估計",
+   "shape": "table",
+   "w": 100
+  },
+  "g_thor75": {
+   "cat": "收納",
+   "color": "#1E1E1E",
+   "d": 43.4,
+   "h": 38.4,
+   "model": "models/g_thor75.glb",
+   "name": "索爾箱 75L",
+   "notes": "THOR 75L 官方尺寸 70.8×43.4×38.4cm（含蓋），3.55kg",
+   "shape": "box",
+   "stand": true,
+   "w": 70.8
+  },
+  "g_cooler45": {
+   "cat": "廚房",
+   "color": "#2E2E2E",
+   "d": 46,
+   "h": 50.6,
+   "model": "models/g_cooler45.glb",
+   "name": "山水 SANSUI 行動冰箱 45L",
+   "notes": "官方尺寸 711×460×506mm（含把手與輪子）",
+   "shape": "box",
+   "stand": true,
+   "w": 71.1
+  },
+  "g_chair": {
+   "cat": "桌椅",
+   "color": "#232323",
+   "d": 49,
+   "h": 74,
+   "model": "models/g_chair.glb",
+   "name": "CAMPFIRE 戰壘折疊露營椅",
+   "notes": "官方：面寬約49cm，扶手33×5.5cm，靠背布高40cm。最低段前高35／後高74（第一段39／78、第二段43／81），重3.7kg，極黑。含扶手總寬與深度是依照片估計",
+   "shape": "chair",
+   "w": 57
+  },
+  "g_woodpile": {
+   "cat": "焚火",
+   "color": "#6E4E32",
+   "d": 39,
+   "h": 35,
+   "model": "models/g_woodpile.glb",
+   "name": "木柴堆",
+   "notes": "10 根約 50cm 長的木柴疊成三角堆，尺寸為估計",
+   "shape": "box",
+   "w": 52
+  },
+  "g_cedar": {
+   "cat": "環境",
+   "color": "#3F6B45",
+   "d": 35,
+   "h": 1500,
+   "name": "杉木（營區）",
+   "notes": "營區樹木，樹幹直徑與高度為照片估計",
+   "shape": "tree",
+   "w": 35
+  },
+  "g_bunker650": {
+   "cat": "帳篷",
+   "color": "#A8AEB2",
+   "cx": 60,
+   "cy": 90,
+   "d": 650,
+   "h": 250,
+   "model": "models/g_bunker650.glb",
+   "name": "邦克650 充氣帳",
+   "notes": "URBANSIDE Easy Bunker Pro 650 鈦灰：650×450×250cm，TPU 氣柱 Ø14cm、頂部鋁合金營柱；地布 640×420；內帳 400×250×200。模型依官方側視/正視圖重做",
+   "shape": "tent",
+   "w": 450
+  },
+  "g_cabin": {
+   "cat": "環境",
+   "color": "#C8BBA8",
+   "d": 200,
+   "h": 230,
+   "name": "小木屋（營區）",
+   "notes": "營區右側小屋，尺寸估計",
+   "shape": "box",
+   "w": 250
+  }
+ },
+ "layouts": {
+  "l_mvzjf58b513hz": {
+   "items": [],
+   "kind": "site",
+   "name": "新營位",
+   "siteD": 800,
+   "siteW": 1000,
+   "updatedAt": "2026-11-02T17:33:18.011Z"
+  },
+  "l_site_now": {
+   "ground": "mixed",
+   "items": [
+    {
+     "gearId": "g_tree_big",
+     "rot": 0,
+     "uid": "c1",
+     "x": 150,
+     "y": 950
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c2",
+     "x": 430,
+     "y": 560
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c3",
+     "x": 600,
+     "y": 330
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c4",
+     "x": 680,
+     "y": 420
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c5",
+     "x": 300,
+     "y": 380
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c6",
+     "x": 900,
+     "y": 620
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c7",
+     "x": 1050,
+     "y": 750
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c8",
+     "x": 1180,
+     "y": 680
+    },
+    {
+     "gearId": "g_cedar",
+     "rot": 0,
+     "uid": "c9",
+     "x": 1235,
+     "y": 640
+    },
+    {
+     "gearId": "g_sink",
+     "rot": 0,
+     "uid": "c10",
+     "x": 935,
+     "y": 700
+    },
+    {
+     "gearId": "g_cabin",
+     "rot": 0,
+     "uid": "c11",
+     "x": 1500,
+     "y": 520
+    },
+    {
+     "gearId": "g_container",
+     "rot": 0,
+     "uid": "c12",
+     "x": -80,
+     "y": 250
+    }
+   ],
+   "kind": "site",
+   "name": "這次營區（照片估計）",
+   "siteD": 1100,
+   "siteW": 1400
+  },
+  "l_bunker_in": {
+   "items": [
+    {
+     "gearId": "g_bed",
+     "rot": 0,
+     "uid": "i1",
+     "x": 225,
+     "y": 85
+    },
+    {
+     "gearId": "g_sofa",
+     "rot": 270,
+     "uid": "i2",
+     "x": 110,
+     "y": 305
+    },
+    {
+     "gearId": "g_igt",
+     "rot": 90,
+     "uid": "i3",
+     "x": 255,
+     "y": 300
+    },
+    {
+     "gearId": "g_chair",
+     "rot": 90,
+     "uid": "i4",
+     "x": 365,
+     "y": 200
+    },
+    {
+     "gearId": "g_chair",
+     "rot": 90,
+     "uid": "i5",
+     "x": 365,
+     "y": 270
+    },
+    {
+     "gearId": "g_chair",
+     "rot": 90,
+     "uid": "i6",
+     "x": 365,
+     "y": 340
+    },
+    {
+     "gearId": "g_chair",
+     "rot": 90,
+     "uid": "i7",
+     "x": 365,
+     "y": 410
+    },
+    {
+     "gearId": "g_chair",
+     "rot": 180,
+     "uid": "i8",
+     "x": 285,
+     "y": 470
+    },
+    {
+     "gearId": "g_kitchen_z",
+     "rot": 0,
+     "uid": "i9",
+     "x": 225,
+     "y": 575
+    },
+    {
+     "gearId": "g_fire",
+     "rot": 0,
+     "uid": "i10",
+     "x": -90,
+     "y": 270
+    }
+   ],
+   "kind": "tent",
+   "name": "邦克650 帳內（依草圖）",
+   "tentId": "g_bunker650"
+  },
+  "l_mvzjf671ifizj": {
+   "items": [],
+   "kind": "tent",
+   "name": "邦克650 充氣帳 帳內",
+   "tentId": "g_bunker650",
+   "updatedAt": "2026-11-02T17:33:19.261Z"
+  },
+  "l_site": {
+   "ground": "color",
+   "groundColor": "#a4c59b",
+   "items": [
+    {
+     "gearId": "g_sofa",
+     "rot": 0,
+     "uid": "i_mvzgwqem6248l",
+     "x": 445,
+     "y": 665
+    },
+    {
+     "gearId": "g_thor75",
+     "rot": 180,
+     "uid": "i_mvzgxv3nohyk7",
+     "x": 415,
+     "y": 180
+    },
+    {
+     "gearId": "g_igt",
+     "rot": 0,
+     "uid": "i_mvzh2cpttteti",
+     "x": 460,
+     "y": 540
+    },
+    {
+     "fire": true,
+     "gearId": "g_fire",
+     "rot": 0,
+     "uid": "i_mvzh2qj8yk0zj",
+     "x": 445,
+     "y": 830
+    },
+    {
+     "gearId": "g_jspace",
+     "rot": 90,
+     "uid": "i_mvzw1fexi67zr",
+     "x": 450,
+     "y": -30
+    },
+    {
+     "gearId": "g_bunker650",
+     "locked": true,
+     "rot": 0,
+     "tent": {
+      "doors": {
+       "LM": "open",
+       "LS": "open",
+       "RM": "open",
+       "RS": "open",
+       "back": "open",
+       "front": "closed"
+      }
+     },
+     "uid": "i_mw01sfr52ogeh",
+     "x": 440,
+     "y": 445
+    },
+    {
+     "gearId": "g_cooler45",
+     "rot": 0,
+     "uid": "i_mw01ytwun7dgw",
+     "x": 325,
+     "y": 180
+    },
+    {
+     "gearId": "g_foldbox",
+     "rot": 0,
+     "uid": "i_mw01z771oshlt",
+     "x": 498,
+     "y": 174
+    },
+    {
+     "gearId": "g_foldbox",
+     "rot": 0,
+     "uid": "i_mw01zbnoyzubc",
+     "x": 569,
+     "y": 175
+    },
+    {
+     "gearId": "g_screen150",
+     "on": true,
+     "rot": 0,
+     "uid": "i_mw04f3iarvtuk",
+     "x": 450,
+     "y": 1135
+    },
+    {
+     "gearId": "g_woodpile",
+     "rot": 240,
+     "uid": "i_mw04kexz9yesd",
+     "x": 360,
+     "y": 835
+    },
+    {
+     "gearId": "g_chair",
+     "rot": 0,
+     "uid": "i_mw04l59nxi67r",
+     "x": 495,
+     "y": 460
+    },
+    {
+     "gearId": "g_hichair",
+     "rot": 0,
+     "uid": "i_mw04lkmfchz9q",
+     "x": 415,
+     "y": 455
+    }
+   ],
+   "kind": "site",
+   "name": "營位範例 10×8m",
+   "siteD": 2000,
+   "siteW": 2000,
+   "updatedAt": "2026-11-03T05:07:17.135Z"
+  }
+ }
+}
