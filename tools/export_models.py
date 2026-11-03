@@ -1,3 +1,6 @@
+"""Export artifact db + model assets to the site.
+Usage: python3 export_models.py <export_dir with gear/ layouts/ models/> <site_dir> <seedVersion>
+Bump seedVersion each update so existing visitors receive new/changed gear (their own layouts are kept)."""
 import json,base64,struct,os,sys,glob
 ex=sys.argv[1]; out=sys.argv[2]
 gear={}; lay={}
@@ -22,5 +25,6 @@ for gid,g in gear.items():
         j=json.load(open(f"{ex}/models/{g['modelId']}.json"))
         open(f"{out}/models/{gid}.glb",'wb').write(to_glb(j))
         g['model']=f"models/{gid}.glb"; del g['modelId']
-json.dump({'gear':gear,'layouts':lay},open(f'{out}/data/seed.json','w'),ensure_ascii=False,indent=1)
+seedv=int(sys.argv[3]) if len(sys.argv)>3 else 1
+json.dump({'seedVersion':seedv,'gear':gear,'layouts':lay},open(f'{out}/data/seed.json','w'),ensure_ascii=False,indent=1)
 print(len(gear),len(lay))

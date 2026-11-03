@@ -172,6 +172,7 @@ kbd{font-family:var(--font-mono);font-size:10px;border:1px solid var(--line);bor
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
 <script src="vendor/GLTFLoader.js"></script>
+<script src="vendor/CSS3DRenderer.js"></script>
 <script>
 (() => {
 "use strict";
@@ -179,7 +180,7 @@ const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = p => p + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const CATS = ["帳篷","車輛","寢具","桌椅","廚房","焚火","照明","影音","收納","環境","其他"];
-const SHAPES = {box:"方塊",table:"桌子",chair:"椅子",mattress:"床墊／睡墊",cot:"高腳床（充氣床＋床架）",sofa:"沙發（座墊＋靠背＋扶手）",cylinder:"圓柱（焚火台、水桶）",tree:"樹木（寬＝樹幹直徑）",screen:"投影布幕（寬＝含支架總寬）",tent:"帳篷"};
+const SHAPES = {box:"方塊",table:"桌子",chair:"椅子",mattress:"床墊／睡墊",cot:"高腳床（充氣床＋床架）",sofa:"沙發（座墊＋靠背＋扶手）",cylinder:"圓柱（焚火台、水桶）",tree:"樹木（寬＝樹幹直徑）",screen:"投影布幕（寬＝含支架總寬）",slattable:"木條桌（可延伸）",tent:"帳篷"};
 
 /* ---------------- data store: cloud db when available, otherwise this browser ---------------- */
 const S = { gear:{}, layouts:{}, mode:"local", db:null, ready:false };
@@ -209,7 +210,10 @@ async function initStore(){
   let db = null;
   try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }
   if(!db){ S.mode="local";
-    if(!Object.keys(S.gear).length){ try{ const j = await (await fetch("data/seed.json",{cache:"no-cache"})).json(); S.gear=j.gear||{}; S.layouts=j.layouts||{}; lsSave(); }catch(e){} }
+    try{ const j = await (await fetch("data/seed.json",{cache:"no-cache"})).json(); const sv=j.seedVersion||1, mine=+(localStorage.getItem("campplan.seed")||0);
+      if(!Object.keys(S.gear).length){ S.gear=j.gear||{}; S.layouts=j.layouts||{}; }
+      else if(sv>mine){ Object.assign(S.gear, j.gear||{}); Object.entries(j.layouts||{}).forEach(([k,v])=>{ if(!S.layouts[k]) S.layouts[k]=v; }); }
+      lsSave(); localStorage.setItem("campplan.seed", String(sv)); }catch(e){}
     S.ready=true; setStatus("warn","資料存在這台裝置的瀏覽器"); renderAll(); return; }
   S.db = db; S.mode = "db"; S.gear = {}; S.layouts = {};
   let got = 0;
@@ -245,8 +249,8 @@ function renderAll(){
   renderLayoutPane(); renderGearPane(); rebuildScene(); updateOverlay();
 }
 
-const DOORS=[["front","前門"],["back","後門"],["LM","左側大門"],["LS","左側小門"],["RM","右側大門"],["RS","右側小門"]];
-function doorUI(opts, scope){ const d=(opts&&opts.doors)||{};
+const DOORS6=[["front","前門"],["back","後門"],["LM","左側大門"],["LS","左側小門"],["RM","右側大門"],["RS","右側小門"]];
+function doorUI(opts, scope, g){ const d=(opts&&opts.doors)||{}; const DOORS = (g&&g.doors) || DOORS6;
   return `<div class="sec"><h3>帳篷門（點一下開／關）</h3><div class="chips">${DOORS.map(([k,n])=>`<button class="chip" data-door="${k}" data-scope="${scope}" aria-pressed="${d[k]==="open"}"><span class="sw" style="background:${d[k]==="open"?"transparent":"var(--muted)"}"></span>${n}${d[k]==="open"?"：開":"：關"}</button>`).join("")}</div><div class="help">前門在畫面上方，「左／右」是從上往下看的左右。</div></div>`; }
 function renderLayoutPane(){
   const P = $("#paneLayout"); const L = curLayout(); const ls = layoutList();
@@ -260,7 +264,7 @@ function renderLayoutPane(){
     h += `<div class="sec"><h3>這張配置</h3><label class="f">名稱<input type="text" id="lName" value="${esc(L.name)}"></label>`;
     if(L.kind==="site") h += `<div class="row"><label class="f">營位寬 cm<input type="number" id="lW" min="100" step="10" value="${L.siteW||1000}"></label><label class="f">營位深 cm<input type="number" id="lD" min="100" step="10" value="${L.siteD||800}"></label></div>`;
     else h += `<label class="f">帳篷<select id="lTent">${tents.map(([id,g])=>`<option value="${esc(id)}" ${id===L.tentId?"selected":""}>${esc(g.name)}（${dimsTxt(g)}）</option>`).join("")}</select></label>`;
-    if(L.kind==="tent" && S.gear[L.tentId] && S.gear[L.tentId].model) h += doorUI(L.tentOpts, "layout");
+    if(L.kind==="tent" && S.gear[L.tentId] && S.gear[L.tentId].model) h += doorUI(L.tentOpts, "layout", S.gear[L.tentId]);
     const gk = L.ground || "none";
     h += `<div class="row"><label class="f">地面<select id="lGround">${[["none","不顯示（只有格線）"],["gravel","碎石地"],["grass","草地"],["mixed","碎石＋草地"],["color","單色"]].map(([k,n])=>`<option value="${k}" ${k===gk?"selected":""}>${n}</option>`).join("")}</select></label>${gk==="color"?`<label class="f" style="flex:0 0 72px">顏色<input type="color" id="lGroundColor" value="${esc(L.groundColor||"#8C8A80")}" style="width:100%;height:32px;border:1px solid var(--line);border-radius:6px;background:none"></label>`:""}</div>`;
     h += `<div class="row"><button class="btn" id="dupLayout">複製這張</button><button class="btn danger ${U.armed==="layout"?"armed":""}" id="delLayout">${U.armed==="layout"?"再按一次刪除":"刪除配置"}</button></div></div>`;
@@ -273,14 +277,17 @@ function renderLayoutPane(){
       <div class="row"><button class="btn" id="mRot">整組轉 90°</button><button class="btn" id="mDup">複製</button><button class="btn danger" id="mDel">移除</button><button class="btn" id="mNone">取消選取</button></div>
       <div class="help">拖曳其中一件，整組會一起移動。方向鍵一起微調、<kbd>R</kbd> 整組轉向、<kbd>Esc</kbd> 取消。</div></div>`;
     } else if(it && g){
+      const ge = effGear(g, it);
       h += `<div class="sec card"><h3>選取中</h3><div class="row"><span class="sw" style="background:${esc(g.color)}"></span><strong>${esc(g.name)}</strong></div>
-      <div class="mono">寬 ${g.w} × 深 ${g.d} × 高 ${g.h} cm</div>
+      <div class="mono">寬 ${ge.w} × 深 ${g.d} × 高 ${g.h} cm</div>
+      ${Array.isArray(g.ext)&&g.ext.length?`<div class="sec"><h3>桌面長度</h3><div class="chips">${g.ext.map((L2,k)=>`<button class="chip" data-ext="${k}" aria-pressed="${(it.ext||0)===k}">${k===0?"收起":k+" 節"} ${L2} cm</button>`).join("")}</div></div>`:""}
       <div class="row"><label class="f">X cm<input type="number" id="iX" step="1" value="${Math.round(it.x)}" ${it.locked?"disabled":""}></label><label class="f">Y cm<input type="number" id="iY" step="1" value="${Math.round(it.y)}" ${it.locked?"disabled":""}></label><label class="f">旋轉°<input type="number" id="iR" step="15" value="${Math.round(it.rot)}" ${it.locked?"disabled":""}></label></div>
-      ${g.shape==="tent" && g.model ? doorUI(it.tent, "item") : ""}
+      ${g.shape==="tent" && g.model ? doorUI(it.tent, "item", g) : ""}
       ${g.stand?`<div class="row"><label class="f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="iStand" ${it.stand?"checked":""}> 放在鋁合金支架上（高 ${STAND_H} cm）</label></div>`:""}
       ${g.shape==="screen"?`<div class="row"><button class="btn ${it.on?"primary":""}" id="iScreen">${it.on?"⏹ 播放中（按此關閉）":"▶ 打開布幕播電影"}</button></div>
       <div class="row"><label class="btn" style="flex:1;text-align:center">🎞 ${movieName?esc(movieName):"選擇影片檔…"}<input type="file" id="iMovie" accept="video/*" hidden></label>${movieVideo?`<button class="btn" id="iMute">${movieVideo.muted?"🔇":"🔊"}</button>`:""}</div>
-      <div class="help">沒有選影片時會播一段動畫。影片只在這台裝置播放，不會上傳，重新整理後要再選一次。</div>`:""}
+      <label class="f">YouTube 連結<input type="text" id="iYT" placeholder="貼上 YouTube 網址" value="${esc(it.yt!==undefined?it.yt:(g.yt?"https://youtu.be/"+g.yt:""))}"></label>
+      <div class="help">有 YouTube 連結時，布幕會播那部影片（先靜音自動播放，點影片可以開聲音）。清空連結會改播動畫。也可以選電腦裡的影片檔，影片檔不會上傳，重新整理後要再選一次。</div>`:""}
       ${g.cat==="焚火"?`<div class="row"><button class="btn ${it.fire?"primary":""}" id="iFire">${it.fire?"🔥 燃燒中（按此熄火）":"🪵 點火"}</button></div>`:""}
       <div class="row"><button class="btn ${it.locked?"primary":""}" id="iLock">${it.locked?"🔒 已鎖定（按此解鎖）":"🔓 鎖定位置"}</button></div>
       ${it.locked?`<div class="help">鎖定中：不能拖曳、轉向或微調，點畫面時會直接穿過它，選到裡面的東西。要解鎖可以在下方「物品清單」點它。</div>`:""}
@@ -354,6 +361,7 @@ $("#paneLayout").addEventListener("click", e => {
     saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); return; }
   if(b.dataset.lock && L){ const it=L.items.find(i=>i.uid===b.dataset.lock); if(it){ it.locked=!it.locked; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); } return; }
   if(b.dataset.pick && L){ const id=b.dataset.pick; if(U.multiMode || e.shiftKey || e.ctrlKey || e.metaKey) toggleSel(id); else if(U.sel===id && selIds().length===1) clearSel(); else { U.sel=id; U.multi=[id]; } renderLayoutPane(); rebuildScene(); return; }
+  if(b.dataset.ext!==undefined && L){ const it=selItem(); if(it){ it.ext=+b.dataset.ext; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); } return; }
   if(b.id==="mMode"){ U.multiMode=!U.multiMode; renderLayoutPane(); return; }
   if(b.id==="mAll" && L){ U.multi=L.items.filter(i=>!i.locked && S.gear[i.gearId]).map(i=>i.uid); U.sel=U.multi[U.multi.length-1]||null; renderLayoutPane(); rebuildScene(); return; }
   if(b.id==="mRot") return rotateGroup(90);
@@ -370,6 +378,7 @@ $("#paneLayout").addEventListener("click", e => {
 });
 $("#paneLayout").addEventListener("change", e => {
   const t = e.target; const L = curLayout();
+  if(t.id==="iYT"){ const it=L.items.find(i=>i.uid===U.sel); if(it){ it.yt=t.value.trim(); saveLayout(U.layoutId); rebuildScene(); } return; }
   if(t.id==="iStand"){ const it=L.items.find(i=>i.uid===U.sel); if(it){ it.stand=t.checked; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); } return; }
   if(t.id==="iMovie" && t.files[0]){ setMovieFile(t.files[0]); return; }
   if(t.id==="layoutSel"){ U.layoutId=t.value; U.sel=null; U.armed=null; saveUI(); renderAll(); return fitView(); }
@@ -484,6 +493,7 @@ const world = new THREE.Group(); scene.add(world);
 let itemGroups = {};
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888";
 
+function effGear(g, it){ if(Array.isArray(g.ext) && g.ext.length){ const k=Math.max(0,Math.min(g.ext.length-1, (it&&it.ext)||0)); return {...g, w:g.ext[k]}; } return g; }
 function footprint(g){
   const w=g.w/2, d=g.d/2;
   if(g.shape==="tent"){ const cx=Math.min(g.cx||0,w), cy=Math.min(g.cy||0,d);
@@ -556,7 +566,7 @@ function modelFor(g, opts){
       o.material = Array.isArray(o.material) ? o.material.map(x=>x.clone()) : o.material.clone();
       const mats = Array.isArray(o.material)?o.material:[o.material];
       if(/^roof/.test(nm) && !U.showRoof) { o.visible = false; return; }
-      const dk = (nm.match(/^door_(\w+)/)||[])[1];
+      const dk = (nm.match(/^door_([A-Za-z]+)/)||[])[1];
       mats.forEach(mt=>{
         if(/fabric/i.test(mt.name||"")){ if(g.color) mt.color = new THREE.Color(g.color); mt.transparent=true; mt.opacity=U.fabricOp; mt.depthWrite=false; mt.side=THREE.DoubleSide; }
         if(dk){ if(doors[dk]==="open"){ o.visible=false; } else { mt.color = new THREE.Color(g.color||"#A8AEB2").multiplyScalar(.82); mt.transparent=true; mt.opacity=Math.min(1,U.fabricOp+.3); mt.depthWrite=false; mt.side=THREE.DoubleSide; } }
@@ -590,6 +600,18 @@ function gearMesh(g, selected, opts){
       break; }
     case "tree": { const tr=new THREE.Mesh(new THREE.CylinderGeometry(w/2*0.8,w/2,h,20), new THREE.MeshStandardMaterial({color:"#6B5544",roughness:.95})); tr.position.y=h/2; grp.add(tr);
       const cr=Math.max(120,w*3); const cn=new THREE.Mesh(new THREE.ConeGeometry(cr,h*0.5,16), new THREE.MeshStandardMaterial({color:g.color||"#3F6B45",roughness:.9,transparent:true,opacity:.55,depthWrite:false})); cn.position.y=h*0.72; cn.userData.noPick=true; grp.add(cn); break; }
+    case "slattable": { const wood=new THREE.MeshStandardMaterial({color:col, roughness:.7, emissive: selected? new THREE.Color(cssVar("--hi")) : 0x000000, emissiveIntensity: selected? .3:0});
+      const woodD=new THREE.MeshStandardMaterial({color:col.clone().multiplyScalar(.78), roughness:.75});
+      const st=2, sw=3.2, gap=0.9, n=Math.max(1,Math.floor((w-4)/(sw+gap)));
+      for(let i=0;i<n;i++){ const x=-w/2+2+sw/2+i*(sw+gap)+((w-4)-(n*(sw+gap)-gap))/2; box(sw,st,d-1,x,h-st/2,0,wood); }
+      box(w,5,2.2,0,h-st-2.5,d/2-1.1,woodD); box(w,5,2.2,0,h-st-2.5,-d/2+1.1,woodD); box(2.2,5,d,w/2-1.1,h-st-2.5,0,woodD); box(2.2,5,d,-w/2+1.1,h-st-2.5,0,woodD);
+      const lh=h-st-5, sp=6, lw=3.4;
+      const legsAt = w>=130 ? [-1,0,1] : [-1,1];
+      legsAt.forEach(sx=>{ const xt = sx*(w/2-7), xb = sx===0? 0 : sx*(w/2-7+sp);
+        [-1,1].forEach(sz=>{ const zt=sz*(d/2-4); const len=Math.hypot(xt-xb, lh), leg=new THREE.Mesh(new THREE.BoxGeometry(lw,len,lw), woodD);
+          leg.position.set((xt+xb)/2, lh/2, zt); leg.rotation.z = Math.atan2(xb-xt, lh)*-1; grp.add(leg); });
+        box(2.4,3,d-8, sx===0?0:sx*(w/2-7+sp*0.35), lh*0.35, 0, woodD); });
+      break; }
     case "screen": { const fr=4, sw=w-8, sh=Math.min(h-40, sw*9/16), top=h-6, mid=top-sh/2-fr;
       const blk=new THREE.MeshStandardMaterial({color:"#1C1C1C", roughness:.5, metalness:.4, emissive: selected? new THREE.Color(cssVar("--hi")) : 0x000000, emissiveIntensity: selected? .35:0});
       [-1,1].forEach(s=>{ const p=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,h,12), blk); p.position.set(s*(w/2-2),h/2,0); grp.add(p); box(4,3,d,s*(w/2-2),1.5,0,blk); });
@@ -642,7 +664,7 @@ function groundTexture(kind){
 }
 function rebuildScene(){
   while(world.children.length) world.remove(world.children[0]);
-  fires = []; screensOn = 0;
+  fires = []; screensOn = 0; ytWanted = [];
   itemGroups = {}; $("#labels").innerHTML = ""; labelEls = {};
   const photo = U.view==="photo";
   scene.background = photo ? null : new THREE.Color(cssVar("--stage"));
@@ -670,17 +692,35 @@ function rebuildScene(){
       if(U.view!=="top"){ const sh=modelFor(t, L.tentOpts)||tentShell(t,.12); sh.position.set(t.w/2,0,t.d/2); world.add(sh); }
     }
   }
-  L.items.forEach(it => { const g=S.gear[it.gearId]; if(!g) return;
+  L.items.forEach(it => { const g0=S.gear[it.gearId]; if(!g0) return; const g=effGear(g0, it);
     const grp = gearMesh(g, isSel(it.uid), it.tent); grp.position.set(it.x,0,it.y); grp.rotation.y = -it.rot*Math.PI/180;
     grp.userData.uid = it.uid; world.add(grp); itemGroups[it.uid]=grp;
     if(it.stand && g.stand){ grp.children.forEach(c=>c.position.y+=STAND_H); grp.add(makeStand(g)); }
     if(it.fire && g.cat==="焚火") grp.add(makeFire(g));
-    if(it.on && g.shape==="screen") grp.traverse(o=>{ if(o.userData.screen){ o.material=movieMaterial(); const l=new THREE.PointLight(0x9fb8ff,.6,600,1.5); l.position.set(0,o.position.y,60); grp.add(l); screensOn++; } });
+    if(it.on && g.shape==="screen") grp.traverse(o=>{ if(o.userData.screen){ const yid=ytId(it.yt!==undefined?it.yt:g.yt);
+      if(yid && !movieVideo && cssR){ o.material=new THREE.MeshBasicMaterial({color:0x050505, side:THREE.DoubleSide}); ytWanted.push({uid:it.uid, id:yid, mesh:o, w:o.geometry.parameters.width, h:o.geometry.parameters.height}); }
+      else o.material=movieMaterial(); const l=new THREE.PointLight(0x9fb8ff,.6,600,1.5); l.position.set(0,o.position.y,60); grp.add(l); screensOn++; } });
     const el=document.createElement("div"); el.className="lbl"+(isSel(it.uid)?" sel":""); el.innerHTML=`${it.locked?"🔒 ":""}${it.fire&&g.cat==="焚火"?"🔥 ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.stand&&g.stand?STAND_H:0)+(it.fire&&g.cat==="焚火"?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
   });
 }
 let labelEls = {};
 let fires = [];
+/* YouTube on the projector screen: an iframe placed in 3D with CSS3DRenderer, on top of the WebGL canvas */
+function ytId(v){ if(!v) return ""; v=String(v).trim(); const m=v.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m?m[1]:(/^[\w-]{11}$/.test(v)?v:""); }
+let ytWanted = [], ytLive = {};
+const cssScene = new THREE.Scene(); let cssR = null;
+try { if(THREE.CSS3DRenderer){ cssR = new THREE.CSS3DRenderer(); const el=cssR.domElement; el.style.position="absolute"; el.style.inset="0"; el.style.pointerEvents="none"; el.style.zIndex="1"; el.className="ytLayer"; stage.insertBefore(el, renderer.domElement.nextSibling); cssR.setSize(stage.clientWidth||1, stage.clientHeight||1); } } catch(err){ cssR=null; }
+const PXCM = 4;
+function syncYT(){
+  if(!cssR) return; const want = (U.tab==="layout" && U.view!=="top" && U.view!=="photo") ? ytWanted : [];
+  const keep = new Set();
+  want.forEach(w => { const key=w.uid+"|"+w.id; keep.add(key); let o=ytLive[key];
+    if(!o){ const div=document.createElement("div"); div.style.width=(w.w*PXCM)+"px"; div.style.height=(w.h*PXCM)+"px"; div.style.background="#000"; div.style.pointerEvents="auto";
+      const f=document.createElement("iframe"); f.src=`https://www.youtube.com/embed/${w.id}?autoplay=1&mute=1&loop=1&playlist=${w.id}&playsinline=1&rel=0`; f.allow="autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen=true; f.style.cssText="width:100%;height:100%;border:0"; div.appendChild(f);
+      o=new THREE.CSS3DObject(div); cssScene.add(o); ytLive[key]=o; }
+    w.mesh.updateWorldMatrix(true,false); w.mesh.matrixWorld.decompose(o.position, o.quaternion, o.scale); o.scale.multiplyScalar(1/PXCM); o.position.add(new THREE.Vector3(0,0,0.6).applyQuaternion(o.quaternion)); });
+  for(const k in ytLive) if(!keep.has(k)){ cssScene.remove(ytLive[k]); delete ytLive[k]; }
+}
 const STAND_H = 35;
 function makeStand(g){
   const s=new THREE.Group(), H=STAND_H, m=new THREE.MeshStandardMaterial({color:"#1E1E1E", roughness:.45, metalness:.5}), pad=new THREE.MeshStandardMaterial({color:"#141414", roughness:.9});
@@ -746,7 +786,7 @@ function buildGearPreview(){
 /* cameras & view */
 const isFP = () => U.tab==="layout" && (U.view==="free" || U.view==="walk");
 function activeCam(){ return U.tab==="gear" ? perCam : U.view==="top" ? topCam : U.view==="photo" ? photoCam : isFP() ? fpCam : perCam; }
-function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); perCam.aspect=photoCam.aspect=fpCam.aspect=w/h; fpCam.updateProjectionMatrix(); perCam.updateProjectionMatrix(); photoCam.updateProjectionMatrix(); fitTopFrustum(); }
+function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); perCam.aspect=photoCam.aspect=fpCam.aspect=w/h; if(cssR) cssR.setSize(w,h); fpCam.updateProjectionMatrix(); perCam.updateProjectionMatrix(); photoCam.updateProjectionMatrix(); fitTopFrustum(); }
 let topSpan = 800;
 function fitTopFrustum(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; const a=w/h; const hh=topSpan/2; topCam.left=-hh*a; topCam.right=hh*a; topCam.top=hh; topCam.bottom=-hh; topCam.updateProjectionMatrix(); }
 function fitView(){
@@ -900,7 +940,7 @@ function updateScale(){
   const nice=[10,20,50,100,200,500,1000]; let cm=nice.find(n=>n*pxPerCm>=70)||1000;
   $("#scaleBar").style.width = (cm*pxPerCm)+"px"; $("#scaleTxt").textContent = cm>=100 ? (cm/100)+" m" : cm+" cm";
 }
-function loop(){ requestAnimationFrame(loop); fpStep(); if(fires.length) animateFires(performance.now()/1000); if(screensOn) drawMovie(performance.now()/1000); else if(movieVideo && !movieVideo.paused) movieVideo.pause(); if(perCtl.enabled) perCtl.update(); const cam=activeCam(); renderer.render(scene, cam); updateLabels(cam); updateScale(); }
+function loop(){ requestAnimationFrame(loop); fpStep(); if(fires.length) animateFires(performance.now()/1000); if(screensOn) drawMovie(performance.now()/1000); else if(movieVideo && !movieVideo.paused) movieVideo.pause(); if(perCtl.enabled) perCtl.update(); const cam=activeCam(); renderer.render(scene, cam); if(cssR){ syncYT(); if(Object.keys(ytLive).length){ cssR.render(cssScene, cam); } } updateLabels(cam); updateScale(); }
 
 new ResizeObserver(() => resize()).observe(stage);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => rebuildScene());

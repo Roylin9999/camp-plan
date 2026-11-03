@@ -1,4 +1,5 @@
 {
+ "seedVersion": 2,
  "gear": {
   "g_foldbox55": {
    "cat": "收納",
@@ -45,6 +46,22 @@
    "shape": "chair",
    "w": 64
   },
+  "g_aka": {
+   "cat": "桌椅",
+   "color": "#9A5B32",
+   "d": 45,
+   "ext": [
+    90,
+    115,
+    140,
+    165
+   ],
+   "h": 40,
+   "name": "原木圓生 阿卡之霖延伸桌",
+   "notes": "官方：展開 90×45×40cm，一節 115、二節 140、三節 165cm，收納 90×45×7cm，8.5kg，紅木。選取後可以切換桌面長度",
+   "shape": "slattable",
+   "w": 90
+  },
   "g_kitchen_z": {
    "cat": "廚房",
    "color": "#222222",
@@ -87,7 +104,8 @@
    "name": "150吋投影布幕",
    "notes": "150 吋 16:9 畫面約 332×187cm，含支架總寬約 340cm、高 260cm（支架尺寸為估計）。選取後按「打開布幕播電影」",
    "shape": "screen",
-   "w": 340
+   "w": 340,
+   "yt": "Iqnt-dRAcXQ"
   },
   "g_container": {
    "cat": "環境",
@@ -109,6 +127,35 @@
    "notes": "CARGO 不鏽鋼焚火爐（好勢露營）。尺寸沿用同款 C.C. Fire Pit MAX 規格：展開約 40.5×40.5×29cm，收納 41×41×15cm，約 6kg。實品為六角形，模型用圓柱代表",
    "shape": "cylinder",
    "w": 40.5
+  },
+  "g_tarp": {
+   "cat": "帳篷",
+   "color": "#1E1E1E",
+   "d": 300,
+   "doors": [
+    [
+     "front",
+     "前面"
+    ],
+    [
+     "back",
+     "後面"
+    ],
+    [
+     "L",
+     "左側"
+    ],
+    [
+     "R",
+     "右側"
+    ]
+   ],
+   "h": 270,
+   "model": "models/g_tarp.glb",
+   "name": "VINTAGE HUNTER 復古獵人帳（黑）",
+   "notes": "官方：展開 300×300cm，三段高度 260／270／280cm（模型用中段 270），鋼骨消光黑，四面雙層邊布，19kg。屋簷高度約 205cm 為估計",
+   "shape": "tent",
+   "w": 300
   },
   "g_sofa": {
    "cat": "寢具",
@@ -327,14 +374,15 @@
      "gearId": "g_container",
      "rot": 0,
      "uid": "c12",
-     "x": -80,
-     "y": 250
+     "x": -55,
+     "y": 310
     }
    ],
    "kind": "site",
    "name": "這次營區（照片估計）",
    "siteD": 1100,
-   "siteW": 1400
+   "siteW": 1400,
+   "updatedAt": "2026-11-03T05:12:04.986Z"
   },
   "l_bunker_in": {
    "items": [
@@ -446,7 +494,7 @@
      "y": 540
     },
     {
-     "fire": true,
+     "fire": false,
      "gearId": "g_fire",
      "rot": 0,
      "uid": "i_mvzh2qj8yk0zj",
@@ -502,10 +550,10 @@
     {
      "gearId": "g_screen150",
      "on": true,
-     "rot": 0,
+     "rot": 45,
      "uid": "i_mw04f3iarvtuk",
-     "x": 450,
-     "y": 1135
+     "x": 290,
+     "y": 1350
     },
     {
      "gearId": "g_woodpile",
@@ -527,13 +575,44 @@
      "uid": "i_mw04lkmfchz9q",
      "x": 415,
      "y": 455
+    },
+    {
+     "gearId": "g_tarp",
+     "locked": true,
+     "rot": 0,
+     "tent": {
+      "doors": {
+       "L": "open",
+       "R": "closed",
+       "back": "open",
+       "front": "open"
+      }
+     },
+     "uid": "i_mw08rj9l7hbh8",
+     "x": 1060,
+     "y": 1115
+    },
+    {
+     "gearId": "g_bed",
+     "rot": 90,
+     "uid": "i_mw08sewh2270y",
+     "x": 1135,
+     "y": 1080
+    },
+    {
+     "ext": 3,
+     "gearId": "g_aka",
+     "rot": 90,
+     "uid": "i_mw08utanibka5",
+     "x": 850,
+     "y": 1110
     }
    ],
    "kind": "site",
    "name": "營位範例 10×8m",
    "siteD": 2000,
    "siteW": 2000,
-   "updatedAt": "2026-11-03T05:07:17.135Z"
+   "updatedAt": "2026-11-03T05:25:39.572Z"
   }
  }
 }

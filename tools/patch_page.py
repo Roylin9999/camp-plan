@@ -7,7 +7,10 @@ def rep(a,b):
     assert a in s, a[:60]; s=s.replace(a,b,1)
 rep('if(!db){ S.mode="local"; S.ready=true; setStatus("warn","只存在這台裝置的瀏覽器"); renderAll(); return; }',
 '''if(!db){ S.mode="local";
-    if(!Object.keys(S.gear).length){ try{ const j = await (await fetch("data/seed.json",{cache:"no-cache"})).json(); S.gear=j.gear||{}; S.layouts=j.layouts||{}; lsSave(); }catch(e){} }
+    try{ const j = await (await fetch("data/seed.json",{cache:"no-cache"})).json(); const sv=j.seedVersion||1, mine=+(localStorage.getItem("campplan.seed")||0);
+      if(!Object.keys(S.gear).length){ S.gear=j.gear||{}; S.layouts=j.layouts||{}; }
+      else if(sv>mine){ Object.assign(S.gear, j.gear||{}); Object.entries(j.layouts||{}).forEach(([k,v])=>{ if(!S.layouts[k]) S.layouts[k]=v; }); }
+      lsSave(); localStorage.setItem("campplan.seed", String(sv)); }catch(e){}
     S.ready=true; setStatus("warn","資料存在這台裝置的瀏覽器"); renderAll(); return; }''')
 rep('const assets = window.claude && await claude.use("assets"); if(!assets){ msg.textContent="這個畫面不能上傳檔案（需要編輯權限）。"; return; }',
 '''const assets = window.claude && await claude.use("assets");
@@ -16,6 +19,11 @@ rep('const assets = window.claude && await claude.use("assets"); if(!assets){ ms
         S.gear[id].model=u; delete S.gear[id].modelId; saveGear(id); renderGearPane(); rebuildScene(); return; }''')
 rep('<!doctype html><html><head><meta charset=utf8>','<!doctype html><html lang="zh-Hant"><head><meta charset=utf-8>')
 rep('display:none!important}</style></head><body>\n<title>露營平配</title>','display:none!important}</style><title>露營平配</title></head><body>')
-for f in ['build/three.min.js','examples/js/controls/OrbitControls.js','examples/js/loaders/GLTFLoader.js']:
-    rep('https://cdn.jsdelivr.net/npm/three@0.147.0/'+f, 'vendor/'+f.split('/')[-1])
+import re, os
+vend=os.path.join(os.path.dirname(os.path.abspath(sys.argv[2])),'vendor')
+for f in re.findall(r'https://cdn\.jsdelivr\.net/npm/three@0\.147\.0/([\w/.]+\.js)', s):
+    name=f.split('/')[-1]
+    assert os.path.exists(os.path.join(vend,name)), 'missing vendor/'+name+' (copy it from the three@0.147.0 npm package)'
+    rep('https://cdn.jsdelivr.net/npm/three@0.147.0/'+f, 'vendor/'+name)
+assert 'cdn.jsdelivr' not in s
 open(sys.argv[2],'w',encoding='utf8').write(s)
