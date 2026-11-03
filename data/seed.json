@@ -307,8 +307,8 @@
    "d": 388,
    "h": 176.8,
    "model": "models/g_wrangler_v2.glb",
-   "name": "Jeep Wrangler 藍哥 硬頂（水藍）",
-   "notes": "1990 Wrangler YJ 硬頂：車長 387.6、車寬 167.6（不含後視鏡）、高 176.8cm，軸距 237.2、離地 20.8cm；圓形大燈",
+   "name": "Jeep Wrangler TJ 藍哥 硬頂（水藍）",
+   "notes": "Wrangler TJ（1997 年以後），兩門硬頂，圓形大燈。尺寸待依 TJ 規格更新",
    "shape": "box",
    "w": 167.6
   }
