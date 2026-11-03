@@ -304,13 +304,13 @@
   "g_wrangler": {
    "cat": "車輛",
    "color": "#A8D6E6",
-   "d": 422,
-   "h": 183,
+   "d": 387.6,
+   "h": 182.9,
    "model": "models/g_wrangler.glb",
-   "name": "Jeep Wrangler TJ 藍哥（水藍）",
-   "notes": "TJ 兩門硬頂：水藍車身、黑色硬頂、黑葉子板與保險桿、黑鐵圈、車尾備胎。軸距 237cm。佔地含保險桿、葉子板與備胎（約 179×422×183cm，為估計）。車頭朝畫面上方",
+   "name": "Jeep Wrangler YJ 藍哥 1990（水藍）",
+   "notes": "1990 Wrangler YJ：車長 387.6、車寬 167.6（不含後視鏡）、高 182.9cm（軟頂；硬頂 176.8），軸距 237.2、離地 20.8cm",
    "shape": "box",
-   "w": 178.6
+   "w": 167.6
   }
  },
  "layouts": {
