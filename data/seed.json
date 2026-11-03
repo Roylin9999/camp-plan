@@ -322,6 +322,77 @@
    "h": 99,
    "notes": "估計尺寸：台面 60×45 cm、高 80 cm（含擋板/水龍頭約 99 cm）、水槽 42×32×18 cm，下層網架。",
    "model": "models/g_washbasin.glb"
+  },
+  "g_washbasin_s": {
+   "cat": "環境",
+   "color": "#C8CCD0",
+   "d": 35.5,
+   "h": 94,
+   "model": "models/g_washbasin_s.glb",
+   "name": "小洗手台（營區）",
+   "notes": "照片紅框的小洗手台，尺寸估計：台面 45×35 cm、高 78 cm（含擋板/水龍頭約 94 cm）、水槽 30×24×14 cm。",
+   "shape": "box",
+   "w": 45
+  },
+  "g_bucket": {
+   "cat": "環境",
+   "color": "#E0533A",
+   "d": 40,
+   "h": 50,
+   "name": "水桶（營區）",
+   "notes": "洗手台旁的紅色大水桶，尺寸估計",
+   "shape": "cylinder",
+   "w": 40
+  },
+  "g_bucket_s": {
+   "cat": "環境",
+   "color": "#E78FC0",
+   "d": 28,
+   "h": 28,
+   "name": "小水桶（粉紅）",
+   "notes": "洗手台旁的粉紅小桶，尺寸估計",
+   "shape": "cylinder",
+   "w": 28
+  },
+  "g_log": {
+   "cat": "環境",
+   "color": "#5A4636",
+   "d": 450,
+   "h": 35,
+   "name": "倒木",
+   "notes": "營位右側倒在草地上的樹幹，尺寸估計",
+   "shape": "box",
+   "w": 35
+  },
+  "g_fern": {
+   "cat": "環境",
+   "color": "#3E6B35",
+   "d": 120,
+   "h": 90,
+   "name": "蕨類叢",
+   "notes": "營位後方的蕨類植物，尺寸估計",
+   "shape": "cylinder",
+   "w": 160
+  },
+  "g_grass_strip": {
+   "cat": "環境",
+   "color": "#7FA65A",
+   "d": 120,
+   "h": 1,
+   "name": "草地邊（前）",
+   "notes": "營位前緣草地",
+   "shape": "box",
+   "w": 1600
+  },
+  "g_grass_side": {
+   "cat": "環境",
+   "color": "#7FA65A",
+   "d": 700,
+   "h": 1,
+   "name": "草地邊（右）",
+   "notes": "營位右側小屋與倒木旁的草地",
+   "shape": "box",
+   "w": 250
   }
  },
  "layouts": {
@@ -656,6 +727,315 @@
    "siteD": 2000,
    "siteW": 2000,
    "updatedAt": "2026-11-03T05:26:12.589Z"
+  },
+  "l_cedar": {
+   "ground": "gravel",
+   "items": [
+    {
+     "gearId": "g_grass_strip",
+     "locked": true,
+     "rot": 0,
+     "uid": "s1",
+     "x": 800,
+     "y": 1150
+    },
+    {
+     "gearId": "g_grass_side",
+     "locked": true,
+     "rot": 0,
+     "uid": "s2",
+     "x": 1500,
+     "y": 735
+    },
+    {
+     "gearId": "g_tree_big",
+     "locked": true,
+     "rot": 0,
+     "uid": "s3",
+     "x": 160,
+     "y": 1010
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s4",
+     "x": 330,
+     "y": 330
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s5",
+     "x": 380,
+     "y": 420
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s6",
+     "x": 430,
+     "y": 560
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s7",
+     "x": 560,
+     "y": 250
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s8",
+     "x": 640,
+     "y": 420
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s9",
+     "x": 700,
+     "y": 300
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s10",
+     "x": 790,
+     "y": 200
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s11",
+     "x": 880,
+     "y": 260
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s12",
+     "x": 960,
+     "y": 600
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s13",
+     "x": 1030,
+     "y": 520
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s14",
+     "x": 1100,
+     "y": 770
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s15",
+     "x": 1200,
+     "y": 690
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s16",
+     "x": 1250,
+     "y": 640
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s17",
+     "x": 1310,
+     "y": 430
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s18",
+     "x": 250,
+     "y": 180
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s19",
+     "x": 110,
+     "y": 470
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s20",
+     "x": 1420,
+     "y": 280
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s21",
+     "x": 1440,
+     "y": 880
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s22",
+     "x": 560,
+     "y": 120
+    },
+    {
+     "gearId": "g_cedar",
+     "locked": true,
+     "rot": 0,
+     "uid": "s23",
+     "x": 1150,
+     "y": 150
+    },
+    {
+     "gearId": "g_washbasin",
+     "rot": 0,
+     "uid": "s24",
+     "x": 1000,
+     "y": 700
+    },
+    {
+     "gearId": "g_washbasin_s",
+     "rot": 0,
+     "uid": "s25",
+     "x": 930,
+     "y": 610
+    },
+    {
+     "gearId": "g_bucket",
+     "rot": 0,
+     "uid": "s26",
+     "x": 1060,
+     "y": 620
+    },
+    {
+     "gearId": "g_bucket",
+     "rot": 0,
+     "uid": "s27",
+     "x": 1105,
+     "y": 625
+    },
+    {
+     "gearId": "g_bucket_s",
+     "rot": 0,
+     "uid": "s28",
+     "x": 1085,
+     "y": 665
+    },
+    {
+     "gearId": "g_cabin",
+     "locked": true,
+     "rot": 0,
+     "uid": "s29",
+     "x": 1560,
+     "y": 520
+    },
+    {
+     "gearId": "g_container",
+     "locked": true,
+     "rot": 0,
+     "uid": "s30",
+     "x": -60,
+     "y": 320
+    },
+    {
+     "gearId": "g_log",
+     "locked": true,
+     "rot": 25,
+     "uid": "s31",
+     "x": 1340,
+     "y": 1020
+    },
+    {
+     "gearId": "g_fern",
+     "locked": true,
+     "rot": 0,
+     "uid": "s32",
+     "x": 200,
+     "y": 60
+    },
+    {
+     "gearId": "g_fern",
+     "locked": true,
+     "rot": 0,
+     "uid": "s33",
+     "x": 450,
+     "y": 40
+    },
+    {
+     "gearId": "g_fern",
+     "locked": true,
+     "rot": 0,
+     "uid": "s34",
+     "x": 700,
+     "y": 50
+    },
+    {
+     "gearId": "g_fern",
+     "locked": true,
+     "rot": 0,
+     "uid": "s35",
+     "x": 950,
+     "y": 60
+    },
+    {
+     "gearId": "g_fern",
+     "locked": true,
+     "rot": 0,
+     "uid": "s36",
+     "x": 1200,
+     "y": 40
+    },
+    {
+     "gearId": "g_fern",
+     "locked": true,
+     "rot": 0,
+     "uid": "s37",
+     "x": 1400,
+     "y": 120
+    },
+    {
+     "gearId": "g_fern",
+     "locked": true,
+     "rot": 0,
+     "uid": "s38",
+     "x": 60,
+     "y": 700
+    }
+   ],
+   "kind": "site",
+   "name": "杉林營位（三張照片估計）",
+   "siteD": 1200,
+   "siteW": 1600,
+   "updatedAt": "2026-11-03T06:50:00.000Z"
   }
  }
 }
