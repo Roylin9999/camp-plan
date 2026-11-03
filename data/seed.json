@@ -306,11 +306,11 @@
    "color": "#A8D6E6",
    "d": 388,
    "h": 176.8,
-   "model": "models/g_wrangler_v2.glb",
+   "model": "models/g_wrangler_v3.glb",
    "name": "Jeep Wrangler TJ 藍哥 硬頂（水藍）",
-   "notes": "Wrangler TJ（1997 年以後），兩門硬頂，圓形大燈。尺寸待依 TJ 規格更新",
+   "notes": "Wrangler TJ（1997–2006）硬頂：車長約 3881 mm、車寬 1694 mm、硬頂車高約 1768 mm（原廠軟頂 1801 mm）、軸距 2372 mm、離地 211 mm。圓燈外觀。",
    "shape": "box",
-   "w": 167.6
+   "w": 169.4
   }
  },
  "layouts": {
