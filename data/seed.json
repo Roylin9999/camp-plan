@@ -1,5 +1,5 @@
 {
- "seedVersion": 4,
+ "seedVersion": 5,
  "gear": {
   "g_foldbox55": {
    "cat": "收納",
@@ -300,6 +300,17 @@
    "notes": "32cm 鴛鴦鍋放在卡式爐上（尺寸為估計）。放在桌上時，在配置圖的「離地高度」填桌高。選取後按「開火煮滾」會冒泡冒煙",
    "shape": "hotpot",
    "w": 32
+  },
+  "g_wrangler": {
+   "cat": "車輛",
+   "color": "#A8D6E6",
+   "d": 422,
+   "h": 183,
+   "model": "models/g_wrangler.glb",
+   "name": "Jeep Wrangler TJ 藍哥（水藍）",
+   "notes": "TJ 兩門硬頂：水藍車身、黑色硬頂、黑葉子板與保險桿、黑鐵圈、車尾備胎。軸距 237cm。佔地含保險桿、葉子板與備胎（約 179×422×183cm，為估計）。車頭朝畫面上方",
+   "shape": "box",
+   "w": 178.6
   }
  },
  "layouts": {
