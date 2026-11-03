@@ -305,10 +305,10 @@
    "cat": "車輛",
    "color": "#A8D6E6",
    "d": 387.6,
-   "h": 182.9,
+   "h": 176.8,
    "model": "models/g_wrangler.glb",
    "name": "Jeep Wrangler YJ 藍哥 1990（水藍）",
-   "notes": "1990 Wrangler YJ：車長 387.6、車寬 167.6（不含後視鏡）、高 182.9cm（軟頂；硬頂 176.8），軸距 237.2、離地 20.8cm",
+   "notes": "1990 Wrangler YJ 硬頂：車長 387.6、車寬 167.6（不含後視鏡）、高 176.8cm，軸距 237.2、離地 20.8cm；圓形大燈",
    "shape": "box",
    "w": 167.6
   }
