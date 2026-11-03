@@ -311,6 +311,17 @@
    "notes": "Wrangler TJ（1997–2006）硬頂：車長約 3881 mm、車寬 1694 mm、硬頂車高約 1768 mm（原廠軟頂 1801 mm）、軸距 2372 mm、離地 211 mm。圓燈外觀。",
    "shape": "box",
    "w": 169.4
+  },
+  "g_washbasin": {
+   "name": "不鏽鋼洗手台",
+   "cat": "廚房",
+   "shape": "box",
+   "color": "#C8CCD0",
+   "w": 60,
+   "d": 45.5,
+   "h": 99,
+   "notes": "估計尺寸：台面 60×45 cm、高 80 cm（含擋板/水龍頭約 99 cm）、水槽 42×32×18 cm，下層網架。",
+   "model": "models/g_washbasin.glb"
   }
  },
  "layouts": {
