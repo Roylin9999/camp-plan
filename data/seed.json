@@ -556,12 +556,12 @@
      "後面（寢室）"
     ]
    ],
-   "h": 212,
-   "model": "models/g_elfield.glb",
+   "h": 215,
+   "model": "models/g_elfield_v2.glb",
    "name": "Snow Peak Entry 2 Room Elfield 隧道帳 TP-880R",
    "notes": "官方圖：全長600cm，客廳端寬380、寢室端寬315，前拱高210（內200），後段高175，寢室長230。4 支拱架＋1 支脊桿，卡其色外帳、灰褐色頂布、紅色滾邊，灰色內帳在後段",
    "shape": "tent",
-   "w": 383
+   "w": 395
   }
  },
  "layouts": {

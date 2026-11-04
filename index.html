@@ -807,7 +807,7 @@ function modelFor(g, opts){
       if(/^roof/.test(nm) && !U.showRoof) { o.visible = false; return; }
       const dk = (nm.match(/^door_([A-Za-z]+)/)||[])[1];
       mats.forEach(mt=>{
-        if(/fabric/i.test(mt.name||"")){ if(g.color) mt.color = new THREE.Color(g.color); mt.transparent=true; mt.opacity=U.fabricOp; mt.depthWrite=false; mt.side=THREE.DoubleSide; }
+        if(/fabric/i.test(mt.name||"")){ if(g.color && !/keep/i.test(mt.name||"")) mt.color = new THREE.Color(g.color); mt.transparent=true; mt.opacity=U.fabricOp; mt.depthWrite=false; mt.side=THREE.DoubleSide; }
         if(dk){ if(doors[dk]==="open"){ o.visible=false; } else { mt.color = new THREE.Color(g.color||"#A8AEB2").multiplyScalar(.82); mt.transparent=true; mt.opacity=Math.min(1,U.fabricOp+.3); mt.depthWrite=false; mt.side=THREE.DoubleSide; } }
       });
     });
