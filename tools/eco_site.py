@@ -1,8 +1,9 @@
 import json, math, random
 random.seed(11)
-K=0.65  # overall scale (v37: site was too spacious)
-T=lambda px,py: (round((px-400)*2.2*K), round((py-380)*3.4*K))
-W,D=2350,2550
+K=0.38  # overall scale (v38: matched to Roy's drone video, Jimny 3.55 m as ruler)
+M=450   # forest margin around the drawing
+T=lambda px,py: (round((px-400)*2.2*K)+M, round((py-380)*3.4*K)+M)
+W,D=round(3600*K)+2*M,round(3900*K)+2*M
 gravel_px=[(525,1010),(545,950),(600,890),(680,850),(760,820),(850,780),(940,740),(1030,700),(1100,660),(1170,610),(1230,560),(1280,510),(1320,478),(1360,466),(1400,472),(1398,520),(1388,570),(1405,620),(1450,680),(1520,740),(1570,790),(1620,840),(1680,890),(1740,960),(1785,1030),(1815,1110),(1840,1200),(1870,1320),(1895,1440),(1910,1530),
  (1745,1530),(1720,1430),(1680,1330),(1620,1240),(1550,1170),(1470,1120),(1380,1095),(1300,1092),(1220,1110),(1160,1160),(1110,1220),(1040,1258),(950,1272),(850,1262),(760,1240),(680,1205),(600,1165),(548,1100)]
 G=[T(*p) for p in gravel_px]
@@ -29,7 +30,7 @@ def offset(P,k):
         kk=k*(0.75+0.5*random.random())
         out.append((round(P[i][0]+nx/L*kk),round(P[i][1]+ny/L*kk)))
     return out
-soil=offset(G,95)
+soil=offset(G,70)
 def rel(P):
     cx,cy=poly_center(P); return (round(cx),round(cy)), [[p[0]-round(cx),p[1]-round(cy)] for p in P]
 def bbox(pts):
@@ -41,9 +42,9 @@ def add(gid,x,y,rot=0,lock=True):
     if lock: it["locked"]=True
     items.append(it)
 (gc,gp)=rel(G); (sc,sp)=rel(soil)
-w,d=bbox(gp); gear["g_eco_gravel2"]={"name":"碎石營位地面（生態區）","cat":"環境","shape":"patch","tex":"gravel","layer":1,"feather":50,"color":"#B9B9B6","w":w,"d":d,"h":1,"pts":gp,"notes":"杉林奇蹟生態區的碎石營位＋往營本部的碎石路，形狀依插圖估計"}
-w,d=bbox(sp); gear["g_eco_soil2"]={"name":"泥土邊（生態區）","cat":"環境","shape":"patch","tex":"soil","layer":0,"feather":120,"color":"#8E7052","w":w,"d":d,"h":1,"pts":sp,"notes":"碎石地外圍的泥土邊，依插圖估計"}
-add("g_eco_soil2",*sc); add("g_eco_gravel2",*gc)
+w,d=bbox(gp); gear["g_eco_gravel3"]={"name":"碎石營位地面（生態區）","cat":"環境","shape":"patch","tex":"gravel","layer":1,"feather":50,"color":"#B9B9B6","w":w,"d":d,"h":1,"pts":gp,"notes":"杉林奇蹟生態區的碎石營位＋往營本部的碎石路，形狀依插圖估計"}
+w,d=bbox(sp); gear["g_eco_soil3"]={"name":"泥土邊（生態區）","cat":"環境","shape":"patch","tex":"soil","layer":0,"feather":120,"color":"#8E7052","w":w,"d":d,"h":1,"pts":sp,"notes":"碎石地外圍的泥土邊，依插圖估計"}
+add("g_eco_soil3",*sc); add("g_eco_gravel3",*gc)
 gear["g_cedar_l"]={"name":"高聳柳杉","cat":"環境","shape":"tree","color":"#3F6B45","w":45,"d":45,"h":2000,"notes":"生態區的高大柳杉，尺寸估計"}
 gear["g_broadleaf"]={"name":"闊葉樹","cat":"環境","shape":"bush","color":"#3E6B2F","w":650,"d":650,"h":1000,"notes":"原始林的闊葉大樹，尺寸估計"}
 gear["g_broadleaf_s"]={"name":"闊葉小樹","cat":"環境","shape":"bush","color":"#4D7A36","w":420,"d":420,"h":600,"notes":"林緣的小樹，尺寸估計"}
@@ -69,7 +70,7 @@ def free(x,y,r):
     under=r<=130
     return all(math.hypot(x-a,y-b)>=r+(rr if (rr<=130 or not under) else 50) for a,b,rr in placed)
 def scatter(gid,n,region,r,keep_out=150,tries=20000):
-    region=[v*K for v in region]; c=0
+    region=[(0 if v==0 else W if v==3600 else v*K+M) if i%2==0 else (0 if v==0 else D if v==3900 else v*K+M) for i,v in enumerate(region)]; c=0
     for _ in range(tries):
         if c>=n: break
         x=random.uniform(region[0],region[2]); y=random.uniform(region[1],region[3])
@@ -104,6 +105,6 @@ for i in range(0,len(ring)):
 scatter("g_shrub",14,(0,0,3600,3900),130,keep_out=60)
 scatter("g_fern_l",30,(0,0,3600,3900),130,keep_out=40)
 scatter("g_fern_s",40,(0,0,3600,3900),80,keep_out=20)
-layout={"kind":"site","name":"杉林奇蹟 生態區（縮小版）","siteW":W,"siteD":D,"ground":"forest","sky":"day","items":items,"updatedAt":"2026-11-10T06:40:00.000Z"}
+layout={"kind":"site","name":"杉林奇蹟 生態區（照影片）","siteW":W,"siteD":D,"ground":"forest","sky":"day","items":items,"updatedAt":"2026-11-10T06:50:00.000Z"}
 print(len(items), {g:sum(1 for i in items if i["gearId"]==g) for g in set(i["gearId"] for i in items)})
 json.dump({"gear":gear,"layout":layout},open("eco.json","w"),ensure_ascii=False)
