@@ -1,5 +1,5 @@
 {
- "seedVersion": 5,
+ "seedVersion": 6,
  "gear": {
   "g_foldbox55": {
    "cat": "收納",
@@ -562,6 +562,532 @@
    "notes": "官方圖：全長600cm，客廳端寬380、寢室端寬315，前拱高210（內200），後段高175，寢室長230。4 支拱架＋1 支脊桿，卡其色外帳、灰褐色頂布、紅色滾邊，灰色內帳在後段",
    "shape": "tent",
    "w": 395
+  },
+  "g_eco_gravel": {
+   "name": "碎石營位地面（生態區）",
+   "cat": "環境",
+   "shape": "patch",
+   "tex": "gravel",
+   "layer": 1,
+   "feather": 50,
+   "color": "#B9B9B6",
+   "w": 3047,
+   "d": 3618,
+   "h": 1,
+   "pts": [
+    [
+     -1523,
+     41
+    ],
+    [
+     -1479,
+     -163
+    ],
+    [
+     -1358,
+     -367
+    ],
+    [
+     -1182,
+     -503
+    ],
+    [
+     -1006,
+     -605
+    ],
+    [
+     -808,
+     -741
+    ],
+    [
+     -610,
+     -877
+    ],
+    [
+     -412,
+     -1013
+    ],
+    [
+     -258,
+     -1149
+    ],
+    [
+     -104,
+     -1319
+    ],
+    [
+     28,
+     -1489
+    ],
+    [
+     138,
+     -1659
+    ],
+    [
+     226,
+     -1768
+    ],
+    [
+     314,
+     -1809
+    ],
+    [
+     402,
+     -1788
+    ],
+    [
+     398,
+     -1625
+    ],
+    [
+     376,
+     -1455
+    ],
+    [
+     413,
+     -1285
+    ],
+    [
+     512,
+     -1081
+    ],
+    [
+     666,
+     -877
+    ],
+    [
+     776,
+     -707
+    ],
+    [
+     886,
+     -537
+    ],
+    [
+     1018,
+     -367
+    ],
+    [
+     1150,
+     -129
+    ],
+    [
+     1249,
+     109
+    ],
+    [
+     1315,
+     381
+    ],
+    [
+     1370,
+     687
+    ],
+    [
+     1436,
+     1095
+    ],
+    [
+     1491,
+     1503
+    ],
+    [
+     1524,
+     1809
+    ],
+    [
+     1161,
+     1809
+    ],
+    [
+     1106,
+     1469
+    ],
+    [
+     1018,
+     1129
+    ],
+    [
+     886,
+     823
+    ],
+    [
+     732,
+     585
+    ],
+    [
+     556,
+     415
+    ],
+    [
+     358,
+     330
+    ],
+    [
+     182,
+     320
+    ],
+    [
+     6,
+     381
+    ],
+    [
+     -126,
+     551
+    ],
+    [
+     -236,
+     755
+    ],
+    [
+     -390,
+     884
+    ],
+    [
+     -588,
+     932
+    ],
+    [
+     -808,
+     898
+    ],
+    [
+     -1006,
+     823
+    ],
+    [
+     -1182,
+     704
+    ],
+    [
+     -1358,
+     568
+    ],
+    [
+     -1472,
+     347
+    ]
+   ],
+   "notes": "杉林奇蹟生態區的碎石營位＋往營本部的碎石路，形狀依插圖估計"
+  },
+  "g_eco_soil": {
+   "name": "泥土邊（生態區）",
+   "cat": "環境",
+   "shape": "patch",
+   "tex": "soil",
+   "layer": 0,
+   "feather": 120,
+   "color": "#8E7052",
+   "w": 3251,
+   "d": 3849,
+   "h": 1,
+   "pts": [
+    [
+     -1625,
+     60
+    ],
+    [
+     -1579,
+     -190
+    ],
+    [
+     -1453,
+     -442
+    ],
+    [
+     -1235,
+     -580
+    ],
+    [
+     -1058,
+     -685
+    ],
+    [
+     -866,
+     -823
+    ],
+    [
+     -655,
+     -940
+    ],
+    [
+     -473,
+     -1088
+    ],
+    [
+     -334,
+     -1219
+    ],
+    [
+     -195,
+     -1387
+    ],
+    [
+     -37,
+     -1525
+    ],
+    [
+     63,
+     -1702
+    ],
+    [
+     177,
+     -1821
+    ],
+    [
+     309,
+     -1924
+    ],
+    [
+     527,
+     -1823
+    ],
+    [
+     496,
+     -1601
+    ],
+    [
+     529,
+     -1444
+    ],
+    [
+     556,
+     -1316
+    ],
+    [
+     627,
+     -1129
+    ],
+    [
+     775,
+     -930
+    ],
+    [
+     866,
+     -742
+    ],
+    [
+     967,
+     -571
+    ],
+    [
+     1126,
+     -413
+    ],
+    [
+     1241,
+     -151
+    ],
+    [
+     1351,
+     96
+    ],
+    [
+     1423,
+     377
+    ],
+    [
+     1467,
+     689
+    ],
+    [
+     1558,
+     1095
+    ],
+    [
+     1612,
+     1506
+    ],
+    [
+     1626,
+     1925
+    ],
+    [
+     1098,
+     1916
+    ],
+    [
+     996,
+     1511
+    ],
+    [
+     919,
+     1183
+    ],
+    [
+     786,
+     898
+    ],
+    [
+     654,
+     673
+    ],
+    [
+     508,
+     516
+    ],
+    [
+     333,
+     486
+    ],
+    [
+     213,
+     479
+    ],
+    [
+     97,
+     506
+    ],
+    [
+     -9,
+     637
+    ],
+    [
+     -144,
+     837
+    ],
+    [
+     -335,
+     990
+    ],
+    [
+     -575,
+     1052
+    ],
+    [
+     -821,
+     1002
+    ],
+    [
+     -1056,
+     956
+    ],
+    [
+     -1236,
+     809
+    ],
+    [
+     -1453,
+     670
+    ],
+    [
+     -1566,
+     396
+    ]
+   ],
+   "notes": "碎石地外圍的泥土邊，依插圖估計"
+  },
+  "g_cedar_l": {
+   "name": "高聳柳杉",
+   "cat": "環境",
+   "shape": "tree",
+   "color": "#3F6B45",
+   "w": 45,
+   "d": 45,
+   "h": 2000,
+   "notes": "生態區的高大柳杉，尺寸估計"
+  },
+  "g_broadleaf": {
+   "name": "闊葉樹",
+   "cat": "環境",
+   "shape": "bush",
+   "color": "#3E6B2F",
+   "w": 650,
+   "d": 650,
+   "h": 1000,
+   "notes": "原始林的闊葉大樹，尺寸估計"
+  },
+  "g_broadleaf_s": {
+   "name": "闊葉小樹",
+   "cat": "環境",
+   "shape": "bush",
+   "color": "#4D7A36",
+   "w": 420,
+   "d": 420,
+   "h": 600,
+   "notes": "林緣的小樹，尺寸估計"
+  },
+  "g_shrub": {
+   "name": "灌木叢",
+   "cat": "環境",
+   "shape": "bush",
+   "color": "#4D7A36",
+   "w": 260,
+   "d": 230,
+   "h": 170,
+   "notes": "林緣灌木，尺寸估計"
+  },
+  "g_treefern": {
+   "name": "筆筒樹（樹蕨）",
+   "cat": "環境",
+   "shape": "fern",
+   "color": "#4C6B2C",
+   "w": 380,
+   "d": 380,
+   "h": 420,
+   "trunk": 300,
+   "notes": "插圖中的大型樹蕨，尺寸估計"
+  },
+  "g_fern_s": {
+   "cat": "環境",
+   "color": "#3E6B35",
+   "d": 150,
+   "h": 90,
+   "name": "蕨類叢（小）",
+   "notes": "林下的蕨類植物，尺寸估計",
+   "shape": "fern",
+   "w": 160
+  },
+  "g_fern_l": {
+   "cat": "環境",
+   "color": "#3E6B35",
+   "d": 300,
+   "h": 150,
+   "name": "大蕨類叢",
+   "notes": "山坡上的大叢蕨類，尺寸估計",
+   "shape": "fern",
+   "w": 300,
+   "fronds": 13
+  },
+  "g_trashbin": {
+   "name": "垃圾桶（營區）",
+   "cat": "環境",
+   "shape": "cylinder",
+   "color": "#7E868C",
+   "w": 45,
+   "d": 45,
+   "h": 75,
+   "notes": "垃圾分類區的灰色桶子，尺寸估計"
+  },
+  "g_trash_rack": {
+   "name": "垃圾分類台",
+   "cat": "環境",
+   "shape": "box",
+   "color": "#9AA1A6",
+   "w": 110,
+   "d": 45,
+   "h": 90,
+   "notes": "垃圾分類區的金屬分類櫃，尺寸估計"
+  },
+  "g_bin_blue": {
+   "name": "藍色垃圾桶",
+   "cat": "環境",
+   "shape": "box",
+   "color": "#2F6DB5",
+   "w": 50,
+   "d": 45,
+   "h": 85,
+   "notes": "營位後方林緣的藍色桶，尺寸估計"
+  },
+  "g_signboard": {
+   "name": "營區告示牌",
+   "cat": "環境",
+   "shape": "sign",
+   "color": "#2F4A3A",
+   "w": 120,
+   "d": 12,
+   "h": 190,
+   "notes": "往營本部路口的木框告示牌，尺寸估計"
   }
  },
  "layouts": {
@@ -1205,6 +1731,1473 @@
    "siteD": 1200,
    "siteW": 1600,
    "updatedAt": "2026-11-03T06:50:00.000Z"
+  },
+  "l_eco": {
+   "kind": "site",
+   "name": "杉林奇蹟 生態區（插圖）",
+   "siteW": 3600,
+   "siteD": 3900,
+   "ground": "forest",
+   "sky": "day",
+   "items": [
+    {
+     "gearId": "g_eco_soil",
+     "x": 1788,
+     "y": 2084,
+     "rot": 0,
+     "uid": "e1",
+     "locked": true
+    },
+    {
+     "gearId": "g_eco_gravel",
+     "x": 1798,
+     "y": 2101,
+     "rot": 0,
+     "uid": "e2",
+     "locked": true
+    },
+    {
+     "gearId": "g_washbasin",
+     "x": 2607,
+     "y": 1503,
+     "rot": -50,
+     "uid": "e3",
+     "locked": true
+    },
+    {
+     "gearId": "g_trash_rack",
+     "x": 2695,
+     "y": 1625,
+     "rot": -50,
+     "uid": "e4",
+     "locked": true
+    },
+    {
+     "gearId": "g_trashbin",
+     "x": 2658,
+     "y": 1700,
+     "rot": 0,
+     "uid": "e5",
+     "locked": true
+    },
+    {
+     "gearId": "g_trashbin",
+     "x": 2728,
+     "y": 1744,
+     "rot": 0,
+     "uid": "e6",
+     "locked": true
+    },
+    {
+     "gearId": "g_trashbin",
+     "x": 2783,
+     "y": 1785,
+     "rot": 0,
+     "uid": "e7",
+     "locked": true
+    },
+    {
+     "gearId": "g_bin_blue",
+     "x": 1540,
+     "y": 918,
+     "rot": -30,
+     "uid": "e8",
+     "locked": true
+    },
+    {
+     "gearId": "g_signboard",
+     "x": 2886,
+     "y": 1887,
+     "rot": -55,
+     "uid": "e9",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1177,
+     "y": 1785,
+     "rot": 0,
+     "uid": "e10",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1364,
+     "y": 1700,
+     "rot": 0,
+     "uid": "e11",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1595,
+     "y": 1819,
+     "rot": 0,
+     "uid": "e12",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1815,
+     "y": 1241,
+     "rot": 0,
+     "uid": "e13",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1947,
+     "y": 1530,
+     "rot": 0,
+     "uid": "e14",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1859,
+     "y": 918,
+     "rot": 0,
+     "uid": "e15",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1991,
+     "y": 629,
+     "rot": 0,
+     "uid": "e16",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1760,
+     "y": 680,
+     "rot": 0,
+     "uid": "e17",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1,
+     "y": 315,
+     "rot": 0,
+     "uid": "e18",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 795,
+     "y": 110,
+     "rot": 45,
+     "uid": "e19",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1557,
+     "y": 405,
+     "rot": 0,
+     "uid": "e20",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 269,
+     "y": 1061,
+     "rot": 0,
+     "uid": "e21",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1287,
+     "y": 175,
+     "rot": 135,
+     "uid": "e22",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1980,
+     "y": 1,
+     "rot": 90,
+     "uid": "e23",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 375,
+     "y": 1494,
+     "rot": 0,
+     "uid": "e24",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 271,
+     "y": 579,
+     "rot": 45,
+     "uid": "e25",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1108,
+     "y": 1030,
+     "rot": 135,
+     "uid": "e26",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 281,
+     "y": 53,
+     "rot": 0,
+     "uid": "e27",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 950,
+     "y": 536,
+     "rot": 90,
+     "uid": "e28",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1272,
+     "y": 723,
+     "rot": 90,
+     "uid": "e29",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 704,
+     "y": 1028,
+     "rot": 0,
+     "uid": "e30",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 31,
+     "y": 1340,
+     "rot": 135,
+     "uid": "e31",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 557,
+     "y": 359,
+     "rot": 45,
+     "uid": "e32",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 7,
+     "y": 821,
+     "rot": 0,
+     "uid": "e33",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 1616,
+     "y": 1,
+     "rot": 0,
+     "uid": "e34",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 606,
+     "y": 696,
+     "rot": 0,
+     "uid": "e35",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar",
+     "x": 677,
+     "y": 1358,
+     "rot": 90,
+     "uid": "e36",
+     "locked": true
+    },
+    {
+     "gearId": "g_broadleaf",
+     "x": 2768,
+     "y": 546,
+     "rot": 0,
+     "uid": "e37",
+     "locked": true
+    },
+    {
+     "gearId": "g_broadleaf",
+     "x": 3403,
+     "y": 840,
+     "rot": 0,
+     "uid": "e38",
+     "locked": true
+    },
+    {
+     "gearId": "g_broadleaf",
+     "x": 3469,
+     "y": 2354,
+     "rot": 45,
+     "uid": "e39",
+     "locked": true
+    },
+    {
+     "gearId": "g_broadleaf",
+     "x": 3268,
+     "y": 1686,
+     "rot": 0,
+     "uid": "e40",
+     "locked": true
+    },
+    {
+     "gearId": "g_broadleaf",
+     "x": 3209,
+     "y": 10,
+     "rot": 90,
+     "uid": "e41",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 2497,
+     "y": 117,
+     "rot": 0,
+     "uid": "e42",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 2918,
+     "y": 1279,
+     "rot": 0,
+     "uid": "e43",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 2651,
+     "y": 1034,
+     "rot": 135,
+     "uid": "e44",
+     "locked": true
+    },
+    {
+     "gearId": "g_cedar_l",
+     "x": 3596,
+     "y": 329,
+     "rot": 90,
+     "uid": "e45",
+     "locked": true
+    },
+    {
+     "gearId": "g_broadleaf",
+     "x": 23,
+     "y": 2975,
+     "rot": 135,
+     "uid": "e46",
+     "locked": true
+    },
+    {
+     "gearId": "g_broadleaf_s",
+     "x": 2,
+     "y": 1738,
+     "rot": 90,
+     "uid": "e47",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 2217,
+     "y": 2933,
+     "rot": 135,
+     "uid": "e48",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 2099,
+     "y": 3832,
+     "rot": 45,
+     "uid": "e49",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 1504,
+     "y": 3423,
+     "rot": 45,
+     "uid": "e50",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3507,
+     "y": 3871,
+     "rot": 45,
+     "uid": "e51",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3571,
+     "y": 2780,
+     "rot": 0,
+     "uid": "e52",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 1994,
+     "y": 2650,
+     "rot": 0,
+     "uid": "e53",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 1892,
+     "y": 3135,
+     "rot": 0,
+     "uid": "e54",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 764,
+     "y": 3189,
+     "rot": 0,
+     "uid": "e55",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 1250,
+     "y": 3292,
+     "rot": 45,
+     "uid": "e56",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 2525,
+     "y": 3315,
+     "rot": 45,
+     "uid": "e57",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 2496,
+     "y": 3795,
+     "rot": 0,
+     "uid": "e58",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 352,
+     "y": 3820,
+     "rot": 135,
+     "uid": "e59",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 45,
+     "y": 3499,
+     "rot": 90,
+     "uid": "e60",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 1121,
+     "y": 3864,
+     "rot": 45,
+     "uid": "e61",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 1932,
+     "y": 3521,
+     "rot": 90,
+     "uid": "e62",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 1754,
+     "y": 3879,
+     "rot": 90,
+     "uid": "e63",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 3496,
+     "y": 3318,
+     "rot": 0,
+     "uid": "e64",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 728,
+     "y": 3669,
+     "rot": 0,
+     "uid": "e65",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 76,
+     "y": 2259,
+     "rot": 0,
+     "uid": "e66",
+     "locked": true
+    },
+    {
+     "gearId": "g_treefern",
+     "x": 2210,
+     "y": 3256,
+     "rot": 90,
+     "uid": "e67",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 106,
+     "y": 2014,
+     "rot": 0,
+     "uid": "e68",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 150,
+     "y": 1673,
+     "rot": 60,
+     "uid": "e69",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 485,
+     "y": 1397,
+     "rot": 120,
+     "uid": "e70",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 793,
+     "y": 1222,
+     "rot": 60,
+     "uid": "e71",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1178,
+     "y": 927,
+     "rot": 60,
+     "uid": "e72",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1436,
+     "y": 655,
+     "rot": 120,
+     "uid": "e73",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1644,
+     "y": 517,
+     "rot": 120,
+     "uid": "e74",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1721,
+     "y": 315,
+     "rot": 60,
+     "uid": "e75",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 1898,
+     "y": 244,
+     "rot": 120,
+     "uid": "e76",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2230,
+     "y": 140,
+     "rot": 120,
+     "uid": "e77",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2382,
+     "y": 199,
+     "rot": 60,
+     "uid": "e78",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2422,
+     "y": 380,
+     "rot": 60,
+     "uid": "e79",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 2428,
+     "y": 582,
+     "rot": 120,
+     "uid": "e80",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 2514,
+     "y": 937,
+     "rot": 60,
+     "uid": "e81",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 2707,
+     "y": 1217,
+     "rot": 120,
+     "uid": "e82",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2812,
+     "y": 1461,
+     "rot": 60,
+     "uid": "e83",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2923,
+     "y": 1553,
+     "rot": 120,
+     "uid": "e84",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3096,
+     "y": 1766,
+     "rot": 120,
+     "uid": "e85",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3170,
+     "y": 2075,
+     "rot": 0,
+     "uid": "e86",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3291,
+     "y": 2267,
+     "rot": 0,
+     "uid": "e87",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3318,
+     "y": 2463,
+     "rot": 60,
+     "uid": "e88",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3488,
+     "y": 3113,
+     "rot": 0,
+     "uid": "e89",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3560,
+     "y": 3470,
+     "rot": 120,
+     "uid": "e90",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 2745,
+     "y": 3745,
+     "rot": 60,
+     "uid": "e91",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 2501,
+     "y": 3014,
+     "rot": 0,
+     "uid": "e92",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1630,
+     "y": 3104,
+     "rot": 0,
+     "uid": "e93",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 563,
+     "y": 3069,
+     "rot": 60,
+     "uid": "e94",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 382,
+     "y": 2853,
+     "rot": 60,
+     "uid": "e95",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 246,
+     "y": 2797,
+     "rot": 0,
+     "uid": "e96",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 223,
+     "y": 2627,
+     "rot": 120,
+     "uid": "e97",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 105,
+     "y": 2508,
+     "rot": 0,
+     "uid": "e98",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3346,
+     "y": 1117,
+     "rot": 0,
+     "uid": "e99",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 1146,
+     "y": 595,
+     "rot": 135,
+     "uid": "e100",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 498,
+     "y": 1102,
+     "rot": 90,
+     "uid": "e101",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3237,
+     "y": 1487,
+     "rot": 0,
+     "uid": "e102",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3102,
+     "y": 881,
+     "rot": 90,
+     "uid": "e103",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 1045,
+     "y": 257,
+     "rot": 0,
+     "uid": "e104",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3393,
+     "y": 624,
+     "rot": 135,
+     "uid": "e105",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 248,
+     "y": 381,
+     "rot": 135,
+     "uid": "e106",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 352,
+     "y": 3212,
+     "rot": 90,
+     "uid": "e107",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 22,
+     "y": 3869,
+     "rot": 45,
+     "uid": "e108",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 3036,
+     "y": 603,
+     "rot": 0,
+     "uid": "e109",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 2762,
+     "y": 189,
+     "rot": 0,
+     "uid": "e110",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 968,
+     "y": 3717,
+     "rot": 90,
+     "uid": "e111",
+     "locked": true
+    },
+    {
+     "gearId": "g_shrub",
+     "x": 244,
+     "y": 3531,
+     "rot": 0,
+     "uid": "e112",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3453,
+     "y": 12,
+     "rot": 135,
+     "uid": "e113",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 218,
+     "y": 1265,
+     "rot": 0,
+     "uid": "e114",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3548,
+     "y": 1804,
+     "rot": 90,
+     "uid": "e115",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1358,
+     "y": 3799,
+     "rot": 135,
+     "uid": "e116",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3498,
+     "y": 1432,
+     "rot": 135,
+     "uid": "e117",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 685,
+     "y": 3855,
+     "rot": 135,
+     "uid": "e118",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1796,
+     "y": 21,
+     "rot": 45,
+     "uid": "e119",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3599,
+     "y": 843,
+     "rot": 90,
+     "uid": "e120",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 240,
+     "y": 871,
+     "rot": 90,
+     "uid": "e121",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 97,
+     "y": 39,
+     "rot": 90,
+     "uid": "e122",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 846,
+     "y": 690,
+     "rot": 90,
+     "uid": "e123",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 956,
+     "y": 3429,
+     "rot": 135,
+     "uid": "e124",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 903,
+     "y": 960,
+     "rot": 0,
+     "uid": "e125",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3264,
+     "y": 375,
+     "rot": 90,
+     "uid": "e126",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1347,
+     "y": 376,
+     "rot": 0,
+     "uid": "e127",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 53,
+     "y": 3192,
+     "rot": 135,
+     "uid": "e128",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1640,
+     "y": 3700,
+     "rot": 135,
+     "uid": "e129",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 539,
+     "y": 3432,
+     "rot": 90,
+     "uid": "e130",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3587,
+     "y": 2191,
+     "rot": 0,
+     "uid": "e131",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 749,
+     "y": 309,
+     "rot": 0,
+     "uid": "e132",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1398,
+     "y": 7,
+     "rot": 135,
+     "uid": "e133",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3315,
+     "y": 2715,
+     "rot": 0,
+     "uid": "e134",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 2310,
+     "y": 3583,
+     "rot": 135,
+     "uid": "e135",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 468,
+     "y": 58,
+     "rot": 90,
+     "uid": "e136",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 2781,
+     "y": 818,
+     "rot": 135,
+     "uid": "e137",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3067,
+     "y": 186,
+     "rot": 0,
+     "uid": "e138",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 17,
+     "y": 634,
+     "rot": 45,
+     "uid": "e139",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 3339,
+     "y": 1965,
+     "rot": 90,
+     "uid": "e140",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1790,
+     "y": 2838,
+     "rot": 45,
+     "uid": "e141",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_l",
+     "x": 1794,
+     "y": 3399,
+     "rot": 45,
+     "uid": "e142",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3026,
+     "y": 1395,
+     "rot": 45,
+     "uid": "e143",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1148,
+     "y": 3562,
+     "rot": 135,
+     "uid": "e144",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2626,
+     "y": 365,
+     "rot": 135,
+     "uid": "e145",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2640,
+     "y": 14,
+     "rot": 90,
+     "uid": "e146",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3362,
+     "y": 2959,
+     "rot": 135,
+     "uid": "e147",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 466,
+     "y": 611,
+     "rot": 135,
+     "uid": "e148",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 293,
+     "y": 1609,
+     "rot": 0,
+     "uid": "e149",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2078,
+     "y": 3518,
+     "rot": 45,
+     "uid": "e150",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 92,
+     "y": 1462,
+     "rot": 90,
+     "uid": "e151",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2211,
+     "y": 2702,
+     "rot": 45,
+     "uid": "e152",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2676,
+     "y": 3526,
+     "rot": 0,
+     "uid": "e153",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3473,
+     "y": 2506,
+     "rot": 0,
+     "uid": "e154",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1893,
+     "y": 3729,
+     "rot": 135,
+     "uid": "e155",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2094,
+     "y": 3323,
+     "rot": 135,
+     "uid": "e156",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 147,
+     "y": 1825,
+     "rot": 90,
+     "uid": "e157",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2308,
+     "y": 3877,
+     "rot": 90,
+     "uid": "e158",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1454,
+     "y": 3105,
+     "rot": 45,
+     "uid": "e159",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 66,
+     "y": 2804,
+     "rot": 0,
+     "uid": "e160",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1580,
+     "y": 203,
+     "rot": 0,
+     "uid": "e161",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2656,
+     "y": 632,
+     "rot": 135,
+     "uid": "e162",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 16,
+     "y": 1059,
+     "rot": 0,
+     "uid": "e163",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 487,
+     "y": 884,
+     "rot": 0,
+     "uid": "e164",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3446,
+     "y": 3650,
+     "rot": 45,
+     "uid": "e165",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3164,
+     "y": 1235,
+     "rot": 135,
+     "uid": "e166",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3020,
+     "y": 1144,
+     "rot": 135,
+     "uid": "e167",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 473,
+     "y": 3744,
+     "rot": 0,
+     "uid": "e168",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2522,
+     "y": 3623,
+     "rot": 90,
+     "uid": "e169",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1176,
+     "y": 32,
+     "rot": 90,
+     "uid": "e170",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 672,
+     "y": 540,
+     "rot": 45,
+     "uid": "e171",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 679,
+     "y": 27,
+     "rot": 45,
+     "uid": "e172",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2872,
+     "y": 1029,
+     "rot": 0,
+     "uid": "e173",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 240,
+     "y": 2953,
+     "rot": 90,
+     "uid": "e174",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 1049,
+     "y": 3153,
+     "rot": 45,
+     "uid": "e175",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2112,
+     "y": 33,
+     "rot": 90,
+     "uid": "e176",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3462,
+     "y": 273,
+     "rot": 135,
+     "uid": "e177",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3594,
+     "y": 507,
+     "rot": 45,
+     "uid": "e178",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 3583,
+     "y": 1065,
+     "rot": 90,
+     "uid": "e179",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 63,
+     "y": 3660,
+     "rot": 0,
+     "uid": "e180",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2002,
+     "y": 2905,
+     "rot": 90,
+     "uid": "e181",
+     "locked": true
+    },
+    {
+     "gearId": "g_fern_s",
+     "x": 2423,
+     "y": 2824,
+     "rot": 90,
+     "uid": "e182",
+     "locked": true
+    }
+   ],
+   "updatedAt": "2026-11-10T06:30:00.000Z"
   }
  }
 }
