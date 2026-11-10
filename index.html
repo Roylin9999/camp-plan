@@ -55,7 +55,7 @@ aside{border-right:1px solid var(--line);background:var(--panel);overflow:auto;m
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row>*{min-width:0}
 label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);flex:1}
-input[type=text],input[type=number],select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 8px;color:var(--ink)}
+input[type=text],input[type=number],input[type=search],select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 8px;color:var(--ink)}
 input[type=number]{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .btn{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 10px;cursor:pointer;white-space:nowrap}
@@ -133,6 +133,26 @@ kbd{font-family:var(--font-mono);font-size:10px;border:1px solid var(--line);bor
   html,body{height:auto}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* quick actions for the selection, floating on the 3D view (no need to scroll to the side panel on a phone) */
+.selBar{position:absolute;right:max(10px,env(safe-area-inset-right,0px));bottom:10px;z-index:5;display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;box-shadow:0 4px 16px rgba(0,0,0,.14);max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none}
+.selBar[hidden]{display:none}
+.selBar button{flex:none;border:0;background:none;color:var(--ink);border-radius:8px;min-width:40px;height:40px;padding:0 8px;cursor:pointer;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;gap:1px}
+.selBar button span{font-size:10px;color:var(--muted)}
+.selBar button:hover{background:var(--bg)} .selBar button[disabled]{opacity:.35;cursor:default;background:none}
+.selBar button.danger{color:var(--danger)} .selBar button.danger span{color:var(--danger)}
+.selBar .nm{max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700;padding:0 6px 0 8px}
+.selBar .sep{width:1px;align-self:stretch;background:var(--line);margin:4px 2px}
+@media (max-width:520px){ .selBar{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));bottom:46px;justify-content:space-between;max-width:none} .selBar .nm{display:none} }
+.toast{position:absolute;left:50%;top:56px;transform:translate(-50%,-6px);z-index:6;background:var(--ink);color:var(--panel);font-size:13px;padding:6px 14px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.toast.on{opacity:.92;transform:translate(-50%,0)}
+.search{position:relative}.search input{padding-left:28px}.search::before{content:"🔍";position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.6;pointer-events:none}
+.noHit{display:none!important}
+/* touch screens: bigger tap targets, no keyboard-only help, no hover coordinates */
+@media (pointer:coarse){
+  .btn,.chip{min-height:38px} .chip{padding:6px 12px 6px 8px} .itrow .lk,.itrow .itn{min-height:38px}
+  .kbdHelp{display:none} .coord{display:none}
+  input[type=text],input[type=number],input[type=search],select{font-size:16px} /* 16px stops iOS zooming in on focus */
+}
 /* panel toggle + compact toolbar options (phones) */
 .seg .sideBtn{font-size:16px;line-height:1;padding:6px 10px;border-right:1px solid var(--line)}
 .sndBtn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
@@ -245,6 +265,8 @@ body.hideSide aside{display:none}
         <div class="rr"><span>格線</span><input type="range" id="pG" min="0" max="100" value="70"><span class="mono" id="pGv"></span></div>
         <div class="help">照片只在這次瀏覽時使用，尚未存檔。</div>
       </div>
+      <div class="selBar" id="selBar" hidden role="toolbar" aria-label="選取的物品"></div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
       <div class="overlay" id="overlay" hidden><div class="empty" id="overlayMsg"></div></div>
     </section>
   </main>
@@ -277,18 +299,42 @@ const pending = {};
 /* view-only share links: ?view=<layoutId> (or #view=<layoutId>) opens one layout with every editing control hidden and nothing saved */
 const RO = (()=>{ try{ const q=new URLSearchParams(location.search).get("view"); if(q) return q; const m=location.hash.match(/view=([\w-]+)/); return m?m[1]:null; }catch(e){ return null; } })();
 if(RO){ document.body.classList.add("viewOnly","hideSide"); }
+/* cloud writes: a short debounce, then set(). `dirty` holds docs whose local copy is newer than the cloud's,
+   so an incoming snapshot never overwrites an edit (or a delete) that hasn't been confirmed yet. */
+const dirty = new Set(); let saveErr = "";
+const cloudJ = {gear:{}, layouts:{}};   /* latest cloud copy of every doc, as JSON */
+/* once our write is confirmed, adopt the cloud copy if someone else saved this doc in between */
+function reconcile(col, id){ const src = col==="gear" ? S.gear : S.layouts, cj = cloudJ[col][id];
+  if(cj===undefined || !src[id]) return;
+  if(JSON.stringify(src[id])!==cj){ src[id] = JSON.parse(cj); scheduleRender(); } }
+const docKey = (col, id) => col + "/" + id;
 function writeDoc(col, id, data){ if(RO) return;
-  if(S.mode==="db"){
-    clearTimeout(pending[col+id]);
-    pending[col+id] = setTimeout(() => {
-      S.db.collection(col).doc(id).set(JSON.parse(JSON.stringify(data))).catch(e => setStatus("warn","儲存失敗：" + (e && e.message || e && e.code || "")));
-    }, 250);
-  } else lsSave();
-}
-function deleteDoc(col, id){ if(RO) return;
-  if(S.mode==="db") S.db.collection(col).doc(id).delete().catch(()=>setStatus("warn","刪除失敗"));
+  if(S.mode==="db"){ const k=docKey(col,id); dirty.add(k); clearTimeout(pending[k]); pending[k] = setTimeout(() => flushDoc(col, id), 250); syncStatus(); }
   else lsSave();
 }
+function flushDoc(col, id){ const k=docKey(col,id); clearTimeout(pending[k]); delete pending[k];
+  const src = col==="gear" ? S.gear : S.layouts, data = src[id]; if(!data){ dirty.delete(k); return syncStatus(); }
+  const json = JSON.stringify(data);
+  Promise.resolve(S.db.collection(col).doc(id).set(JSON.parse(json))).then(() => { saveErr=""; if(JSON.stringify(src[id])===json && !pending[k]){ dirty.delete(k); reconcile(col, id); } syncStatus(); },
+    e => { saveErr = (e && (e.code || e.message)) || "?"; syncStatus(); });
+}
+/* phones kill background tabs without warning: send anything still waiting in the debounce right away */
+function flushAll(){ Object.keys(pending).forEach(k => { const i=k.indexOf("/"); flushDoc(k.slice(0,i), k.slice(i+1)); }); }
+window.addEventListener("pagehide", flushAll);
+document.addEventListener("visibilitychange", () => { if(document.visibilityState==="hidden") flushAll(); });
+function deleteDoc(col, id){ if(RO) return;
+  if(S.mode==="db"){ const k=docKey(col,id); clearTimeout(pending[k]); delete pending[k]; dirty.add(k); syncStatus();
+    Promise.resolve(S.db.collection(col).doc(id).delete()).then(() => { if(!(col==="gear"?S.gear:S.layouts)[id]) dirty.delete(k); syncStatus(); }, () => { saveErr="刪除失敗"; syncStatus(); }); }
+  else lsSave();
+}
+/* one place decides the header status in cloud mode */
+function syncStatus(){ if(S.mode!=="db" || !S.ready) return; const n = dirty.size;
+  if(saveErr) setStatus("warn", "儲存失敗（" + saveErr + "）");
+  else if(navigator.onLine===false) setStatus("warn", n ? `離線中：${n} 項改動先存在這台裝置，連上網路會自動上傳` : "離線中（顯示上次同步的資料）");
+  else if(n) setStatus("", "儲存中…");
+  else setStatus("ok", "已同步到雲端"); }
+window.addEventListener("online", () => { saveErr=""; syncStatus(); });
+window.addEventListener("offline", syncStatus);
 function saveGear(id){ writeDoc("gear", id, S.gear[id]); }
 /* undo / redo: per-layout snapshots of items, recorded whenever a layout is saved */
 const HIST={};
@@ -306,10 +352,12 @@ async function fbInit(){
   try{
     firebase.initializeApp(window.FB_CONFIG);
     const raw = firebase.firestore();
+    /* keep a copy on this device (IndexedDB): opens fast, works offline at the campsite, and edits made offline upload later */
+    try{ await raw.enablePersistence({synchronizeTabs:true}); }catch(e){ console.warn("offline cache off", e && e.code); }
     /* all data lives in collections named campplan_* so the Firebase project can be shared with other apps */
     /* each doc is stored as {_json:"..."} because Firestore rejects nested arrays (e.g. tent door lists) */
     const enc = d => ({_json: JSON.stringify(d)}), dec = x => (x && typeof x._json === "string") ? JSON.parse(x._json) : (x||{});
-    const wrapSnap = snap => ({ empty: snap.empty, docs: snap.docs.map(d => ({ id: d.id, data: () => dec(d.data()) })) });
+    const wrapSnap = snap => ({ empty: snap.empty, fromCache: !!(snap.metadata && snap.metadata.fromCache), docs: snap.docs.map(d => ({ id: d.id, data: () => dec(d.data()) })) });
     const fs = {
       collection: c => { const col = raw.collection("campplan_" + c); return {
         doc: id => { const r = col.doc(id); return { _raw: r, set: d => r.set(enc(d)), delete: () => r.delete(),
@@ -318,9 +366,10 @@ async function fbInit(){
         onSnapshot: (cb, err) => col.onSnapshot(snap => cb(wrapSnap(snap)), err) }; },
       batch: () => { const b = raw.batch(); return { set: (ref, d) => b.set(ref._raw, enc(d)), commit: () => b.commit() }; }
     };
-    /* fill the cloud before showing it; if the cloud can't be reached or written, stay on this browser's copy */
+    /* new seed gear / old browser-only layouts are added in the background, so the page doesn't wait for them;
+       the live listeners pick the new docs up when they land */
     const fbRO=/[?#&]view=/.test(location.search+location.hash); /* view-only share link: never write */
-    if(!fbRO){ await fbSyncSeed(fs); await fbUploadLocal(fs); }
+    if(!fbRO) (async()=>{ try{ await fbSyncSeed(fs); await fbUploadLocal(fs); }catch(e){ console.warn("seed sync", e); } })();
     return fs;
   }catch(e){ console.warn("firebase", e); fbInit.err = (e && (e.code || e.message)) || "unknown"; return null; }
 }
@@ -358,22 +407,35 @@ async function initStore(){
   let db = null;
   try { if(window.claude && claude.use) db = await claude.use("db"); } catch(e){ db = null; }
   if(!db) db = await fbInit();
-  if(!db){ S.mode="local";
+  if(!db) return startLocal();
+  S.db = db; S.mode = "db"; S.gear = {}; S.layouts = {};
+  let got = 0;
+  const timer = setTimeout(() => { if(!S.ready){ S.ready=true; renderAll(); setStatus("warn","雲端回應較慢，資料載入中…"); } }, 10000);
+  const done = () => { got++; if(got>=2 && !S.ready){ S.ready=true; clearTimeout(timer); syncStatus(); renderAll(); } };
+  /* merge each snapshot doc by doc: only docs that changed in the cloud are replaced, and never one with a local edit
+     still on its way up. A snapshot that only echoes our own write changes nothing, so it doesn't redraw anything. */
+  const apply = (col, key, snap) => { if(S.mode!=="db") return;
+    if(drag && key==="layouts"){ heldSnap = () => apply(col, key, snap); return; }
+    const next = {}; snap.docs.forEach(d => { next[d.id] = JSON.stringify(d.data()||{}); });
+    const cur = S[key], prev = cloudJ[key]; let changed = false;
+    for(const id in next){ if(next[id]===prev[id] || dirty.has(docKey(col,id))) continue;
+      if(cur[id] && JSON.stringify(cur[id])===next[id]) continue; cur[id] = JSON.parse(next[id]); changed = true; }
+    for(const id in prev) if(!(id in next) && cur[id] && !dirty.has(docKey(col,id))){ delete cur[id]; changed = true; }
+    cloudJ[key] = next;
+    if(!S.ready) return done();
+    syncStatus(); if(changed) scheduleRender();
+  };
+  const sub = (col, key) => db.collection(col).onSnapshot(snap => apply(col, key, snap),
+    e => { if(S.mode!=="db") return; if(!S.ready && !got){ clearTimeout(timer); return startLocal("雲端讀取失敗（" + (e && e.code || "") + "），先存在這台裝置"); } setStatus("warn","雲端讀取失敗：" + (e && e.code || "")); done(); });
+  sub("gear","gear"); sub("layouts","layouts");
+}
+let heldSnap = null;
+async function startLocal(msg){ S.mode="local"; S.db=null; lsLoad();
     try{ const j = await (await fetch("data/seed.json",{cache:"no-cache"})).json(); const sv=j.seedVersion||1, mine=+(localStorage.getItem("campplan.seed")||0);
       if(!Object.keys(S.gear).length){ S.gear=j.gear||{}; S.layouts=j.layouts||{}; }
       else if(sv>mine){ Object.assign(S.gear, j.gear||{}); Object.entries(j.layouts||{}).forEach(([k,v])=>{ if(!S.layouts[k]) S.layouts[k]=v; }); }
       lsSave(); localStorage.setItem("campplan.seed", String(sv)); }catch(e){}
-    S.ready=true; setStatus("warn", fbInit.err ? "雲端連線失敗（" + fbInit.err + "），先存在這台裝置" : "資料存在這台裝置的瀏覽器"); renderAll(); return; }
-  S.db = db; S.mode = "db"; S.gear = {}; S.layouts = {};
-  let got = 0;
-  const timer = setTimeout(() => { if(!S.ready){ S.ready=true; renderAll(); setStatus("warn","雲端回應較慢，資料載入中…"); } }, 10000);
-  const done = () => { got++; if(got>=2 && !S.ready){ S.ready=true; clearTimeout(timer); setStatus("ok","已同步到雲端"); renderAll(); } };
-  const sub = (col, key) => db.collection(col).onSnapshot(snap => {
-    const m = {}; snap.docs.forEach(d => { m[d.id] = JSON.parse(JSON.stringify(d.data()||{})); });
-    S[key] = m; done(); if(S.ready){ setStatus("ok","已同步到雲端"); scheduleRender(); }
-  }, e => { setStatus("warn","雲端讀取失敗：" + (e && e.code || "")); done(); });
-  sub("gear","gear"); sub("layouts","layouts");
-}
+    S.ready=true; setStatus("warn", msg || (fbInit.err ? "雲端連線失敗（" + fbInit.err + "），先存在這台裝置" : "資料存在這台裝置的瀏覽器")); renderAll(); }
 
 /* ---------------- UI state ---------------- */
 const U = { showRoof:true, fabricOp:.6, tab:"layout", layoutId:null, sel:null, multi:[], multiMode:false, gearSel:null, view:"top", snap:true, labels:true, armed:null };
@@ -392,7 +454,13 @@ function dimsTxt(g){ return `${g.w}×${g.d}×${g.h}`; }
 
 /* ---------------- sidebar rendering ---------------- */
 let renderQueued = false;
-function scheduleRender(){ if(drag) { renderQueued = true; return; } renderAll(); }
+let paneStale = false;
+const typingInPanel = () => { const a=document.activeElement; return !!(a && a.closest && a.closest("aside") && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type!=="checkbox"); };
+function scheduleRender(){ if(drag) { renderQueued = true; return; }
+  /* a cloud update while someone is typing in the side panel: redraw the 3D now, the panel once they leave the field */
+  if(typingInPanel()){ paneStale = true; if(!S.layouts[U.layoutId]) U.layoutId = (layoutList()[0]||[])[0] || null; rebuildScene(); updateOverlay(); return; }
+  renderAll(); }
+document.querySelector("aside").addEventListener("focusout", () => setTimeout(() => { if(paneStale && !typingInPanel()){ paneStale=false; renderLayoutPane(); renderGearPane(); } }, 0));
 function renderAll(){
   if(RO){ U.layoutId=RO; U.tab="layout"; U.sel=null; U.multi=[]; }
   if(!S.layouts[U.layoutId]) U.layoutId = (layoutList()[0]||[])[0] || null;
@@ -462,15 +530,15 @@ function renderLayoutPane(){
     h += `<div class="sec"><h3>放入裝備</h3>`;
     const gl = gearList().filter(([,g]) => !(L.kind==="tent" && g.shape==="tent"));
     if(gl.length){
-      let lastCat = null; h += `<div>`;
-      gl.forEach(([id,g]) => { if(g.cat!==lastCat){ if(lastCat!==null) h+=`</div>`; h += `<div class="cat">${esc(g.cat||"其他")}</div><div class="chips">`; lastCat=g.cat; }
-        h += `<button class="chip" data-add="${esc(id)}" title="${dimsTxt(g)} cm"><span class="sw" style="background:${esc(g.color)}"></span>${esc(g.name)}</button>`; });
-      h += `</div></div><div class="help">點一下就會放在畫面中央，再拖到想要的位置。</div>`;
+      let lastCat = null; h += `<label class="search"><input type="search" id="addQ" placeholder="搜尋裝備（${gl.length} 件）" value="${esc(U.addQ||"")}" aria-label="搜尋裝備" autocomplete="off"></label><div id="addList">`;
+      gl.forEach(([id,g]) => { if(g.cat!==lastCat){ if(lastCat!==null) h+=`</div></div>`; h += `<div class="catGrp"><div class="cat">${esc(g.cat||"其他")}</div><div class="chips">`; lastCat=g.cat; }
+        h += `<button class="chip" data-add="${esc(id)}" data-q="${esc((g.name+" "+(g.cat||"")+" "+(g.notes||"")).toLowerCase())}" title="${dimsTxt(g)} cm"><span class="sw" style="background:${esc(g.color)}"></span>${esc(g.name)}</button>`; });
+      h += `</div></div><div class="empty noHit" id="addNone">找不到符合的裝備</div></div><div class="help">點一下就會放在畫面中央，再拖到想要的位置。</div>`;
     } else h += `<div class="empty">裝備庫還沒有東西，到「裝備庫」分頁新增。</div>`;
     h += `</div>`;
     const its = L.items.filter(i=>S.gear[i.gearId]);
     if(its.length) h += `<div class="sec"><h3>物品清單</h3><div class="row"><button class="btn ${U.multiMode?"primary":""}" id="mMode">${U.multiMode?"☑ 多選模式中":"☐ 多選模式"}</button><button class="btn" id="mAll">全選（未鎖定）</button></div>${lockAllRow(its)}${its.map(i=>{const g=S.gear[i.gearId]; return `<div class="row itrow ${isSel(i.uid)?"on":""}"><button class="lk" data-lock="${esc(i.uid)}" title="${i.locked?"解鎖":"鎖定"}" aria-label="${i.locked?"解鎖":"鎖定"} ${esc(g.name)}">${i.locked?"🔒":"🔓"}</button><button class="itn" data-pick="${esc(i.uid)}"><span class="sw" style="background:${esc(g.color)}"></span>${i.grp?"🔗 ":""}${esc(g.name)}</button></div>`;}).join("")}<div class="help">點 🔓 鎖定，鎖住的物品不會被拖動，點畫面時會選到它裡面或下面的東西；在畫面上連點兩下可以選到鎖住的物品。點名稱可以選取。</div></div>`;
-    h += `<div class="sec"><details><summary><strong>⌨️ 快捷鍵（仿 CorelDRAW）</strong></summary><div class="help" style="line-height:1.9">
+    h += `<div class="sec kbdHelp"><details><summary><strong>⌨️ 快捷鍵（仿 CorelDRAW）</strong></summary><div class="help" style="line-height:1.9">
       <kbd>Shift</kbd>/<kbd>Ctrl</kbd>+點 加選・減選<br><kbd>Ctrl</kbd>+<kbd>A</kbd> 全選（未鎖定）・<kbd>Esc</kbd> 取消選取<br>
       <kbd>Ctrl</kbd>+<kbd>G</kbd> 群組・<kbd>Ctrl</kbd>+<kbd>U</kbd> 解散群組<br>
       <kbd>Ctrl</kbd>+<kbd>C</kbd> 複製・<kbd>Ctrl</kbd>+<kbd>X</kbd> 剪下・<kbd>Ctrl</kbd>+<kbd>V</kbd> 貼上（再點畫面放置）<br>
@@ -482,14 +550,15 @@ function renderLayoutPane(){
     const rows = Object.entries(counts).filter(([gid])=>S.gear[gid]);
     if(rows.length) h += `<div class="sec"><h3>這張配置的清單</h3>${rows.map(([gid,n])=>`<div class="row"><span class="sw" style="background:${esc(S.gear[gid].color)}"></span><span style="flex:1">${esc(S.gear[gid].name)}</span><span class="mono">×${n}</span></div>`).join("")}</div>`;
   }
-  P.innerHTML = h;
+  P.innerHTML = h; filterList("#addQ", "#addList [data-add]", "#addList .catGrp", "#addNone"); updateSelBar();
 }
 
 function renderGearPane(){
   const P = $("#paneGear"); const gl = gearList();
   let h = `<div class="sec"><div class="row"><h3 style="flex:1">我的裝備（${gl.length}）</h3><button class="btn primary" id="gNew">＋ 新增裝備</button></div>`;
   if(!gl.length) h += `<div class="empty">還沒有裝備。按「新增裝備」，輸入實際的寬、深、高（公分），就會產生等比例的 3D 模型。</div>`;
-  h += `<div class="glist">` + gl.map(([id,g])=>`<div class="gitem" data-g="${esc(id)}" aria-current="${id===U.gearSel}" tabindex="0"><span class="sw" style="background:${esc(g.color)}"></span>${U.renaming===id?`<input class="rnIn" data-rn="${esc(id)}" value="${esc(g.name)}" aria-label="新名稱">`:`<span class="nm">${esc(g.name)}</span>`}<span class="mono">${dimsTxt(g)}</span><button class="rnBtn" data-rename="${esc(id)}" title="改名字" aria-label="幫 ${esc(g.name)} 改名字">✏️</button></div>`).join("") + `</div></div>`;
+  if(gl.length>8) h += `<label class="search"><input type="search" id="gearQ" placeholder="搜尋裝備" value="${esc(U.gearQ||"")}" aria-label="搜尋裝備" autocomplete="off"></label>`;
+  h += `<div class="glist">` + gl.map(([id,g])=>`<div class="gitem" data-q="${esc((g.name+" "+(g.cat||"")+" "+(g.notes||"")).toLowerCase())}" data-g="${esc(id)}" aria-current="${id===U.gearSel}" tabindex="0"><span class="sw" style="background:${esc(g.color)}"></span>${U.renaming===id?`<input class="rnIn" data-rn="${esc(id)}" value="${esc(g.name)}" aria-label="新名稱">`:`<span class="nm">${esc(g.name)}</span>`}<span class="mono">${dimsTxt(g)}</span><button class="rnBtn" data-rename="${esc(id)}" title="改名字" aria-label="幫 ${esc(g.name)} 改名字">✏️</button></div>`).join("") + `</div></div>`;
   const g = S.gear[U.gearSel];
   if(g){
     h += `<div class="sec card"><h3>編輯裝備</h3>
@@ -507,8 +576,16 @@ function renderGearPane(){
     <div class="row"><button class="btn danger ${U.armed==="gear"?"armed":""}" id="gDel">${U.armed==="gear"?"再按一次刪除":"刪除這件裝備"}</button></div>
     <div class="help">右側是這件裝備的等比例 3D 預覽。改尺寸會即時更新所有用到它的配置圖。</div></div>`;
   }
-  P.innerHTML = h;
+  P.innerHTML = h; filterList("#gearQ", "#paneGear .gitem", null);
 }
+/* search boxes: hide what doesn't match without redrawing (so typing keeps focus) */
+function filterList(inSel, itemSel, grpSel, noneSel){ const inp=$(inSel); if(!inp) return; const q=inp.value.trim().toLowerCase(), words=q.split(/\s+/).filter(Boolean); let n=0;
+  document.querySelectorAll(itemSel).forEach(el => { const ok = !words.length || words.every(w => (el.dataset.q||"").includes(w)); el.classList.toggle("noHit", !ok); if(ok) n++; });
+  if(grpSel) document.querySelectorAll(grpSel).forEach(gp => gp.classList.toggle("noHit", !gp.querySelector("[data-q]:not(.noHit)")));
+  if(noneSel){ const e=$(noneSel); if(e) e.classList.toggle("noHit", n>0); } }
+document.addEventListener("input", e => {
+  if(e.target.id==="addQ"){ U.addQ=e.target.value; filterList("#addQ", "#addList [data-add]", "#addList .catGrp", "#addNone"); }
+  if(e.target.id==="gearQ"){ U.gearQ=e.target.value; filterList("#gearQ", "#paneGear .gitem", null); } });
 
 /* sidebar events (delegated) */
 function setTab(t){ U.tab=t; $("#tabLayout").setAttribute("aria-selected", t==="layout"); $("#tabGear").setAttribute("aria-selected", t==="gear"); $("#paneLayout").hidden = t!=="layout"; $("#paneGear").hidden = t!=="gear"; U.armed=null; rebuildScene(); updateOverlay(); fitView(); }
@@ -629,8 +706,39 @@ function addItem(gid){
   const L = curLayout(); const b = layoutBounds(L);
   const c = viewCenter() || {x:(b.x0+b.x1)/2, z:(b.z0+b.z1)/2};
   const it = {uid:uid("i"), gearId:gid, x:snapV(c.x,5), y:snapV(c.z,5), rot:0};
-  L.items.push(it); U.sel=it.uid; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene();
+  L.items.push(it); U.sel=it.uid; U.multi=[it.uid]; saveLayout(U.layoutId); renderLayoutPane(); rebuildScene();
+  toast(`已放入「${(S.gear[gid]||{}).name||""}」，拖曳可移動`);
+  /* phones: bring the 3D view back so the new item can be seen (and dragged) right away */
+  if(landPhone.matches) toggleSide(false);
+  else if(matchMedia("(max-width:760px)").matches){ const r=stage.getBoundingClientRect(); if(r.bottom < r.height*0.6) stage.scrollIntoView({behavior:"smooth", block:"start"}); }
 }
+let toastT = 0;
+function toast(msg){ const t=$("#toast"); if(!t) return; t.textContent=msg; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"), 2400); }
+/* floating quick actions on the 3D view: undo / redo always, plus rotate, copy, lock, delete for the selection */
+function updateSelBar(){
+  const bar=$("#selBar"), L=curLayout(); if(!bar) return;
+  if(RO || !S.ready || U.tab!=="layout" || !L || isFP() || U.view==="photo"){ bar.hidden=true; return; }
+  const its=selItems(), H=histOf(U.layoutId), canU=!!(H&&H.undo.length), canR=!!(H&&H.redo.length);
+  if(!its.length && !canU && !canR){ bar.hidden=true; return; }
+  let h=`<button data-sb="undo" ${canU?"":"disabled"} title="復原 (Ctrl+Z)">↶<span>復原</span></button>`;
+  if(canR) h+=`<button data-sb="redo" title="重做 (Ctrl+Y)">↷<span>重做</span></button>`;
+  if(its.length){ const one=its.length===1?its[0]:null, g=one&&S.gear[one.gearId], locked=its.every(i=>i.locked);
+    h+=`<span class="sep"></span><span class="nm">${one?esc(g&&g.name||""):"已選 "+its.length+" 件"}</span>`
+     +`<button data-sb="rot" ${locked?"disabled":""} title="轉 90° (R)">↻<span>轉向</span></button>`
+     +`<button data-sb="dup" title="複製一份">⧉<span>複製</span></button>`
+     +`<button data-sb="lock" title="${locked?"解除鎖定":"鎖定位置"}">${locked?"🔒":"🔓"}<span>${locked?"解鎖":"鎖定"}</span></button>`
+     +`<button data-sb="del" class="danger" title="移除 (Delete)">🗑<span>移除</span></button>`
+     +`<button data-sb="none" title="取消選取 (Esc)">✕<span>取消</span></button>`; }
+  bar.innerHTML=h; bar.hidden=false;
+}
+$("#selBar").addEventListener("click", e => { const b=e.target.closest("[data-sb]"); if(!b || b.disabled) return; const a=b.dataset.sb, many=selIds().length>1;
+  if(a==="undo") return histStep(true);
+  if(a==="redo") return histStep(false);
+  if(a==="rot") return many ? rotateGroup(90) : rotateSel(90);
+  if(a==="dup") return many ? dupGroup() : dupSel();
+  if(a==="del") return many ? delGroup() : delSel();
+  if(a==="lock"){ const its=selItems(), lock=!its.every(i=>i.locked); its.forEach(i=>{ i.locked=lock; }); saveLayout(U.layoutId); renderLayoutPane(); rebuildScene(); return toast(lock?"已鎖定，不會被拖動":"已解除鎖定"); }
+  if(a==="none"){ clearSel(); renderLayoutPane(); rebuildScene(); } });
 function selItem(){ const L=curLayout(); return L && L.items.find(i=>i.uid===U.sel); }
 function selIds(){ return U.sel && U.multi.includes(U.sel) && U.multi.length>1 ? U.multi.slice() : (U.sel ? [U.sel] : []); }
 function selItems(){ const L=curLayout(); if(!L) return []; const ids=selIds(); return L.items.filter(i=>ids.includes(i.uid)); }
@@ -666,12 +774,12 @@ function copyToLayout(tid){ const T=S.layouts[tid], its=selItems(); if(!T||!its.
   let dx=0, dy=0; if((bx.x0<lim.x0 || bx.x1>lim.x1 || bx.y0<lim.z0 || bx.y1>lim.z1)){ dx=(lim.x0+lim.x1)/2-(bx.x0+bx.x1)/2; dy=(lim.z0+lim.z1)/2-(bx.y0+bx.y1)/2; }
   const n=its.map(i=>{ const c=JSON.parse(JSON.stringify(i)); c.uid=uid("i"); c.locked=false; c.x=Math.round(i.x+dx); c.y=Math.round(i.y+dy); return c; }); regroup(n); histOf(tid);
   T.items=(T.items||[]).concat(n); saveLayout(tid);
-  U.layoutId=tid; U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; U.armed=null; saveUI(); renderAll(); fitView(); }
+  U.layoutId=tid; U.multi=n.map(i=>i.uid); U.sel=U.multi[U.multi.length-1]; U.armed=null; saveUI(); renderAll(); fitView(); toast(`已複製 ${n.length} 件到「${T.name||""}」`); }
 function placeSelAt(p){ const its=selItems().filter(i=>!i.locked); if(!its.length) return; const b=groupBox(its), cx=(b.x0+b.x1)/2, cy=(b.y0+b.y1)/2; its.forEach(i=>{ i.x=snapV(i.x+p.x-cx,5); i.y=snapV(i.y+p.z-cy,5); }); U.placing=false; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
-function delGroup(){ const L=curLayout(); const ids=selIds(); L.items=L.items.filter(i=>!ids.includes(i.uid)); clearSel(); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function delGroup(){ const L=curLayout(); const ids=selIds(); L.items=L.items.filter(i=>!ids.includes(i.uid)); clearSel(); saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); toast(`已移除 ${ids.length} 件 · 按 ↶ 可復原`); }
 function rotateSel(d){ const it=selItem(); if(!it||it.locked) return; it.rot=((it.rot+d)%360+360)%360; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
 function dupSel(){ const it=selItem(); if(!it) return; const n={...JSON.parse(JSON.stringify(it)), uid:uid("i"), x:it.x+20, y:it.y+20, locked:false}; delete n.grp; curLayout().items.push(n); U.sel=n.uid; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
-function delSel(){ const L=curLayout(); if(!L||!U.sel) return; L.items=L.items.filter(i=>i.uid!==U.sel); U.sel=null; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); }
+function delSel(){ const L=curLayout(); if(!L||!U.sel) return; L.items=L.items.filter(i=>i.uid!==U.sel); U.sel=null; U.multi=[]; saveLayout(U.layoutId); rebuildScene(); renderLayoutPane(); toast("已移除 · 按 ↶ 可復原"); }
 document.addEventListener("keydown", e => {
   if(RO) return;
   if(e.target.closest("input,select,textarea")) return; if(U.tab!=="layout") return;
@@ -722,6 +830,9 @@ const fpCam = new THREE.PerspectiveCamera(65, 1, 1, 50000); fpCam.rotation.order
 const FP = {x:0, y:160, z:0, yaw:0, pitch:0, eye:160, pose:"stand", init:null, keys:{}, look:null};
 perCtl.maxPolarAngle = Math.PI/2 - 0.02; perCtl.enableDamping=true;
 const world = new THREE.Group(); scene.add(world);
+/* draw only when something changed (or while fire, smoke, a screen or a walk is animating): saves a lot of phone battery */
+let needsRender = 2; function invalidate(){ needsRender = 2; }
+topCtl.addEventListener("change", invalidate); perCtl.addEventListener("change", invalidate);
 let itemGroups = {};
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888";
 
@@ -796,7 +907,7 @@ function modelFor(g, opts){
   if(typeof c === "string") return null;
   const m = c.clone(true);
   m.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(m), sz = box.getSize(new THREE.Vector3());
-  const outer = new THREE.Group(); outer.add(m);
+  const outer = new THREE.Group(); outer.add(m); outer.userData.model = true; /* shares geometry with modelCache: never free it */
   m.position.set(-(box.min.x+box.max.x)/2, -box.min.y, -(box.min.z+box.max.z)/2);
   outer.scale.set(g.w/(sz.x||1), g.h/(sz.y||1), g.d/(sz.z||1));
   if(g.shape==="tent"){
@@ -804,6 +915,7 @@ function modelFor(g, opts){
     m.traverse(o => { if(!o.isMesh) return;
       const nm = o.name || (o.parent && o.parent.name) || "";
       o.material = Array.isArray(o.material) ? o.material.map(x=>x.clone()) : o.material.clone();
+      (Array.isArray(o.material)?o.material:[o.material]).forEach(x=>{ x.userData.own=true; });
       const mats = Array.isArray(o.material)?o.material:[o.material];
       if(/^roof/.test(nm) && !U.showRoof) { o.visible = false; return; }
       const dk = (nm.match(/^door_([A-Za-z]+)/)||[])[1];
@@ -826,7 +938,7 @@ function barkTexture(){ if(barkTex) return barkTex; const c=document.createEleme
 function seeded(str){ let h=2166136261; for(const ch of String(str||"t")) h=Math.imul(h^ch.charCodeAt(0),16777619); return ()=>{ h=Math.imul(h^(h>>>15),2246822507); h=Math.imul(h^(h>>>13),3266489909); return ((h^=h>>>16)>>>0)/4294967296; }; }
 function makeTree(grp, g, w, h, selected, seed){
   const rnd=seeded(seed||g.name), r0=w/2;
-  const bt=barkTexture().clone(); bt.needsUpdate=true; bt.repeat.set(1, Math.max(2,h/250));
+  const bt=barkTexture().clone(); bt.needsUpdate=true; bt.userData.own=true; bt.repeat.set(1, Math.max(2,h/250));
   const trunkMat=new THREE.MeshStandardMaterial({map:bt, color:0xffffff, roughness:.95, emissive: selected? 0xFFC107:0x000000, emissiveIntensity: selected? .45:0});
   const trunkH=h*0.97, tr=new THREE.Mesh(new THREE.CylinderGeometry(r0*0.42, r0, trunkH, 12, 4), trunkMat);
   const pos=tr.geometry.attributes.position; for(let i=0;i<pos.count;i++){ const y=pos.getY(i)/trunkH+.5, k=1+(rnd()-.5)*.08+Math.sin(y*9+rnd()*6)*.03; pos.setX(i,pos.getX(i)*k); pos.setZ(i,pos.getZ(i)*k); } tr.geometry.computeVertexNormals();
@@ -1047,24 +1159,54 @@ function groundTexture(kind){
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; if(THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding;
   return (groundCache[kind] = t);
 }
+/* Free GPU memory of meshes we throw away. Without this every redraw leaked geometry and materials,
+   which on phones ended in a lost WebGL context after a while of editing. */
+function disposeObj(o){
+  if(o.userData.keep) return;                       /* cached item mesh, still in use */
+  if(o.userData.model){ o.traverse(c => { if(c.material) (Array.isArray(c.material)?c.material:[c.material]).forEach(m => { if(m.userData.own) m.dispose(); }); }); return; }
+  for(const c of o.children) disposeObj(c);
+  if(o.geometry && !o.isSprite) o.geometry.dispose(); /* sprites share one geometry */
+  if(o.material) (Array.isArray(o.material)?o.material:[o.material]).forEach(m => { if(m.map && m.map.userData && m.map.userData.own) m.map.dispose(); m.dispose(); });
+}
+/* Item meshes are reused between redraws when nothing about their look changed (trees, ferns and models are slow to build).
+   Screens and hot pots are rebuilt every time because their materials change while they run. */
+const meshCache = new Map();
+const NO_CACHE = new Set(["screen","hotpot"]);
+function meshKey(g, selected, opts, hi){
+  const ms = g.model ? (typeof modelCache[g.model]==="object" ? 1 : 0) : 0;
+  return JSON.stringify([g, selected, opts||null, U.view==="top", U.showRoof, U.fabricOp, hi, ms], (k,v) => k==="model" && typeof v==="string" && v.length>200 ? v.length+":"+v.slice(-48) : v);
+}
+function itemMesh(it, g, selected, opts, hi, used){
+  if(NO_CACHE.has(g.shape)) return gearMesh(g, selected, opts);
+  const key = meshKey(g, selected, opts, hi), c = meshCache.get(it.uid); used.add(it.uid);
+  if(c && c.key===key) return c.obj;
+  if(c){ c.obj.userData.keep=false; if(c.obj.parent) c.obj.parent.remove(c.obj); disposeObj(c.obj); }
+  const obj = gearMesh(g, selected, opts); obj.userData.keep = true; meshCache.set(it.uid, {key, obj}); return obj;
+}
 function rebuildScene(){
   if(U.layoutId && S.layouts[U.layoutId]) histOf(U.layoutId);
-  while(world.children.length) world.remove(world.children[0]);
+  const old = world.children.slice(); old.forEach(o => world.remove(o)); old.forEach(disposeObj);
   fires = []; screensOn = 0; ytWanted = []; smokes = []; hotBubbles = [];
   itemGroups = {}; $("#labels").innerHTML = ""; labelEls = {};
   const photo = U.view==="photo";
   scene.background = photo ? null : new THREE.Color(cssVar("--stage"));
   if(!photo) stage.style.backgroundImage = "";
   else stage.style.backgroundImage = photoURL ? `url("${photoURL}")` : "";
+  invalidate();
   if(U.tab==="gear"){ buildGearPreview(); return; }
-  const L = curLayout(); if(!L) return;
+  const L = curLayout(); const used = new Set(), hi = cssVar("--hi");
+  if(L) buildLayout(L, photo, used, hi);
+  /* drop cached meshes of items that are gone (other layout, deleted) */
+  for(const [k,c] of meshCache) if(!used.has(k)){ c.obj.userData.keep=false; if(c.obj.parent) c.obj.parent.remove(c.obj); disposeObj(c.obj); meshCache.delete(k); }
+}
+function buildLayout(L, photo, used, hi){
   const b = layoutBounds(L), m = L.kind==="site"?300:150;
   gridGroup = gridLines(b.x0-m,b.z0-m,b.x1+m,b.z1+m); world.add(gridGroup); applyGridOpacity();
   addSky(L, b, photo);
   const gk = L.ground || "none", hasGround = gk!=="none" && !photo;
   if(hasGround){ const gm = m + 300, gw = b.x1-b.x0+gm*2, gd = b.z1-b.z0+gm*2;
     let matG; if(gk==="color") matG = new THREE.MeshStandardMaterial({color:L.groundColor||"#8C8A80", roughness:1});
-    else { const tx = groundTexture(gk).clone(); tx.needsUpdate = true; tx.repeat.set(gw/400, gd/400); matG = new THREE.MeshStandardMaterial({map:tx, roughness:1}); }
+    else { const tx = groundTexture(gk).clone(); tx.needsUpdate = true; tx.userData.own = true; tx.repeat.set(gw/400, gd/400); matG = new THREE.MeshStandardMaterial({map:tx, roughness:1}); }
     const gp = new THREE.Mesh(new THREE.PlaneGeometry(gw, gd), matG); gp.rotation.x=-Math.PI/2; gp.position.set((b.x0+b.x1)/2,-1,(b.z0+b.z1)/2); world.add(gp);
     gridGroup.children.forEach(l=>{ l.material.opacity = .35; }); }
   if(L.kind==="site"){
@@ -1080,15 +1222,19 @@ function rebuildScene(){
     }
   }
   L.items.forEach(it => { const g0=S.gear[it.gearId]; if(!g0) return; const g=effGear(g0, it);
-    const grp = gearMesh(g, isSel(it.uid), (g.shape==="tree"||g.shape==="fern"||g.shape==="bush") ? {seed:it.uid} : it.tent); grp.position.set(it.x,it.elev||0,it.y); grp.rotation.y = -it.rot*Math.PI/180; if(isSel(it.uid)){ const hl=selHalo(g); hl.position.y=2-(it.elev||0); grp.add(hl); }
+    const sel = isSel(it.uid), onStand = !!(it.stand && g.stand);
+    const base = itemMesh(it, g, sel, (g.shape==="tree"||g.shape==="fern"||g.shape==="bush") ? {seed:it.uid} : it.tent, hi, used); base.position.y = onStand ? STAND_H : 0;
+    const grp = new THREE.Group(); grp.add(base); grp.position.set(it.x,it.elev||0,it.y); grp.rotation.y = -it.rot*Math.PI/180; if(sel){ const hl=selHalo(g); hl.position.y=2-(it.elev||0); grp.add(hl); }
     grp.userData.uid = it.uid; world.add(grp); itemGroups[it.uid]=grp;
-    if(it.stand && g.stand){ grp.children.forEach(c=>c.position.y+=STAND_H); grp.add(makeStand(g)); }
+    if(onStand) grp.add(makeStand(g));
     if(it.fire && isPit(g)){ grp.add(makeFire(g)); if(it.fire==="smoke") grp.add(makeSmoke({y0:g.h+Math.min(g.w,g.d)*0.9, r:Math.min(g.w,g.d)*0.3, rise:420, size:[22,140], count:26, period:6.5, color:"#8a8a8a", alpha:.42, drift:60})); }
     if(it.boil && g.shape==="hotpot"){ grp.add(makeSmoke({y0:g.h, r:g.w*0.3, rise:90, size:[8,40], count:16, period:3.2, color:"#ffffff", alpha:.7, drift:12})); grp.traverse(o=>{ if(o.userData.bubbles) o.visible=true; }); hotBubbles.push(grp); }
     if(it.on && g.shape==="screen") grp.traverse(o=>{ if(o.userData.screen){ const yid=ytId(it.yt!==undefined?it.yt:g.yt);
       if(yid && !movieVideo && cssR){ o.material=new THREE.MeshBasicMaterial({color:0x000000, opacity:0, blending:THREE.NoBlending, side:THREE.DoubleSide}); ytWanted.push({uid:it.uid, id:yid, mesh:o, w:o.geometry.parameters.width, h:o.geometry.parameters.height}); }
-      else o.material=movieMaterial(); const l=new THREE.PointLight(0x9fb8ff,.6,600,1.5); l.position.set(0,o.position.y,60); grp.add(l); screensOn++; } });
+      else { o.material.dispose(); o.material=movieMaterial(); } const l=new THREE.PointLight(0x9fb8ff,.6,600,1.5); l.position.set(0,o.position.y,60); grp.add(l); screensOn++; } });
     if(g.shape==="patch") return;
+    /* locked plants (trees, ferns, grass) are background: no name tag unless selected, so gear and landmarks stay readable */
+    if(it.locked && !sel && (g.shape==="tree" || g.shape==="fern" || g.shape==="bush" || (g.cat==="環境" && /樹|杉|蕨|草|竹|灌木|倒木|落葉/.test(g.name||"")))) return;
     const el=document.createElement("div"); el.className="lbl"+(isSel(it.uid)?" sel":""); el.innerHTML=`${it.locked&&!RO?"🔒 ":""}${it.fire&&isPit(g)?(it.fire==="smoke"?"🔥💨 ":"🔥 "):""}${it.boil&&g.shape==="hotpot"?"♨️ ":""}${it.on&&g.shape==="screen"?"🎬 ":""}${esc(g.name)}<br><span class="mono">${g.w}×${g.d}</span>`; $("#labels").appendChild(el); labelEls[it.uid]={el, h:g.h+(it.elev||0)+(it.stand&&g.stand?STAND_H:0)+(it.fire&&isPit(g)?Math.min(g.w,g.d)*1.4:0), x:it.x, z:it.y};
   });
 }
@@ -1236,7 +1382,7 @@ function buildGearPreview(){
 /* cameras & view */
 const isFP = () => U.tab==="layout" && (U.view==="free" || U.view==="walk");
 function activeCam(){ return U.tab==="gear" ? perCam : U.view==="top" ? topCam : U.view==="photo" ? photoCam : isFP() ? fpCam : perCam; }
-function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); perCam.aspect=photoCam.aspect=fpCam.aspect=w/h; if(cssR) cssR.setSize(w,h); fpCam.updateProjectionMatrix(); perCam.updateProjectionMatrix(); photoCam.updateProjectionMatrix(); fitTopFrustum(); }
+function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; invalidate(); renderer.setSize(w,h,false); perCam.aspect=photoCam.aspect=fpCam.aspect=w/h; if(cssR) cssR.setSize(w,h); fpCam.updateProjectionMatrix(); perCam.updateProjectionMatrix(); photoCam.updateProjectionMatrix(); fitTopFrustum(); }
 let topSpan = 800;
 function fitTopFrustum(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; const a=w/h; const hh=topSpan/2; topCam.left=-hh*a; topCam.right=hh*a; topCam.top=hh; topCam.bottom=-hh; topCam.updateProjectionMatrix(); }
 function fitView(){
@@ -1287,7 +1433,7 @@ $("#viewSeg").addEventListener("click", e => { const b=e.target.closest("button[
 $("#optSnap").onchange = e => U.snap = e.target.checked;
 $("#optRoof").onchange = e => { U.showRoof = e.target.checked; saveUI(); rebuildScene(); };
 $("#optFab").oninput = e => { U.fabricOp = (+e.target.value)/100; saveUI(); rebuildScene(); };
-$("#optLabels").onchange = e => { U.labels = e.target.checked; $("#labels").hidden = !U.labels; try{ localStorage.setItem("campplan.labels", U.labels?"1":"0"); }catch(err){} };
+$("#optLabels").onchange = e => { U.labels = e.target.checked; invalidate(); $("#labels").hidden = !U.labels; try{ localStorage.setItem("campplan.labels", U.labels?"1":"0"); }catch(err){} };
 /* floor grid on/off (per viewer, remembered in this browser) */
 $("#optGrid").onchange = e => { U.grid = e.target.checked; applyGridOpacity(); try{ localStorage.setItem("campplan.grid", U.grid?"1":"0"); }catch(err){} };
 try{ if(localStorage.getItem("campplan.grid")==="0"){ U.grid=false; $("#optGrid").checked=false; } }catch(err){}
@@ -1303,7 +1449,7 @@ function updateOverlay(){
   m.textContent = msg; o.hidden = !msg;
   topCtl.enabled = U.tab==="layout" && U.view==="top"; perCtl.enabled = U.tab==="gear" || U.view==="3d";
   $("#hud").hidden = U.tab==="gear"; $("#photoPanel").hidden = !(U.tab==="layout" && U.view==="photo");
-  $("#fpPanel").hidden = !isFP(); if(isFP()) fpPanelUI(); touchUI();
+  $("#fpPanel").hidden = !isFP(); if(isFP()) fpPanelUI(); touchUI(); updateSelBar();
 }
 
 /* photo mode */
@@ -1314,11 +1460,11 @@ function updatePhotoCam(){
   photoCam.position.set(c.x + Math.sin(a)*PH.d, PH.h, c.z + Math.cos(a)*PH.d);
   const pitch = PH.t*Math.PI/180; // downward tilt
   const look = new THREE.Vector3(-Math.sin(a), 0, -Math.cos(a)); look.y = -Math.tan(pitch);
-  photoCam.lookAt(photoCam.position.clone().add(look)); photoCam.fov = PH.f; photoCam.updateProjectionMatrix();
+  photoCam.lookAt(photoCam.position.clone().add(look)); photoCam.fov = PH.f; photoCam.updateProjectionMatrix(); invalidate();
   ["h","d","a","t","f","g"].forEach(k=>{ const el=$("#p"+k.toUpperCase()+"v"); if(el) el.textContent = PH[k] + ({h:"cm",d:"cm",a:"°",t:"°",f:"°",g:"%"}[k]); });
 }
 function viewCenterFixed(){ const b=layoutBounds(curLayout()); return {x:(b.x0+b.x1)/2,z:(b.z0+b.z1)/2}; }
-function applyGridOpacity(){ if(!gridGroup) return; gridGroup.visible = U.grid!==false; const o = U.view==="photo" ? PH.g/100 : 1; gridGroup.children.forEach(m=>{ m.material.opacity=o; m.visible=o>0; }); }
+function applyGridOpacity(){ invalidate(); if(!gridGroup) return; gridGroup.visible = U.grid!==false; const o = U.view==="photo" ? PH.g/100 : 1; gridGroup.children.forEach(m=>{ m.material.opacity=o; m.visible=o>0; }); }
 ["H","D","A","T","F","G"].forEach(k => { const el=$("#p"+k); el.addEventListener("input", () => { PH[k.toLowerCase()] = +el.value; updatePhotoCam(); applyGridOpacity(); }); });
 $("#photoFile").addEventListener("change", e => { const f=e.target.files[0]; if(!f) return; if(photoURL) URL.revokeObjectURL(photoURL); photoURL = URL.createObjectURL(f); rebuildScene(); updateOverlay(); });
 
@@ -1372,7 +1518,8 @@ renderer.domElement.addEventListener("pointermove", e => {
 });
 function endDrag(e){
   if(FP.look){ FP.look=null; return; }
-  if(drag){ const moved=drag.moved; drag=null; updateOverlay(); if(moved){ saveLayout(U.layoutId); renderLayoutPane(); } if(renderQueued){ renderQueued=false; renderAll(); } return; }
+  if(drag){ const moved=drag.moved; drag=null; updateOverlay(); if(moved){ saveLayout(U.layoutId); renderLayoutPane(); }
+    if(heldSnap){ const f=heldSnap; heldSnap=null; f(); } if(renderQueued){ renderQueued=false; renderAll(); } return; }
   if(downEmpty && e && Math.hypot(e.clientX-downEmpty.x, e.clientY-downEmpty.y) < 4 && U.sel && !U.multiMode){ clearSel(); rebuildScene(); renderLayoutPane(); }
   downEmpty=null;
 }
@@ -1427,7 +1574,7 @@ function fpEnter(v){
   }
   FP.init=v; FP.keys={}; fpApply();
 }
-function fpApply(){ fpCam.position.set(FP.x,FP.y,FP.z); fpCam.rotation.set(FP.pitch, FP.yaw, 0); }
+function fpApply(){ if(fpCam.position.x!==FP.x || fpCam.position.y!==FP.y || fpCam.position.z!==FP.z || fpCam.rotation.x!==FP.pitch || fpCam.rotation.y!==FP.yaw) invalidate(); fpCam.position.set(FP.x,FP.y,FP.z); fpCam.rotation.set(FP.pitch, FP.yaw, 0); }
 let fpLast = performance.now();
 function fpStep(){
   const now=performance.now(), dt=Math.min(0.05,(now-fpLast)/1000); fpLast=now; if(!isFP()) return;
@@ -1454,9 +1601,13 @@ function updateScale(){
   const nice=[10,20,50,100,200,500,1000]; let cm=nice.find(n=>n*pxPerCm>=70)||1000;
   $("#scaleBar").style.width = (cm*pxPerCm)+"px"; $("#scaleTxt").textContent = cm>=100 ? (cm/100)+" m" : cm+" cm";
 }
-function loop(){ requestAnimationFrame(loop); fpStep(); if(fires.length) animateFires(performance.now()/1000); if(smokes.length||hotBubbles.length) animateSmoke(performance.now()/1000); if(screensOn) drawMovie(performance.now()/1000); else if(movieVideo && !movieVideo.paused) movieVideo.pause(); if(perCtl.enabled) perCtl.update(); const cam=activeCam(); renderer.render(scene, cam); if(cssR){ syncYT(); const live=Object.keys(ytLive).length; if(live){ cssR.render(cssScene, cam); } if(live && scene.background){ stage.style.backgroundColor = "#"+scene.background.getHexString(); scene.background=null; renderer.render(scene, cam); } } updateLabels(cam); updateScale(); }
+function loop(){ requestAnimationFrame(loop); fpStep(); if(fires.length) animateFires(performance.now()/1000); if(smokes.length||hotBubbles.length) animateSmoke(performance.now()/1000); if(screensOn) drawMovie(performance.now()/1000); else if(movieVideo && !movieVideo.paused) movieVideo.pause(); if(perCtl.enabled) perCtl.update();
+  const animating = fires.length || smokes.length || hotBubbles.length || screensOn; if(!animating && needsRender<=0) return; if(needsRender>0) needsRender--;
+  const cam=activeCam(); renderer.render(scene, cam); if(cssR){ syncYT(); const live=Object.keys(ytLive).length; if(live){ cssR.render(cssScene, cam); } if(live && scene.background){ stage.style.backgroundColor = "#"+scene.background.getHexString(); scene.background=null; renderer.render(scene, cam); } } updateLabels(cam); updateScale(); }
 
 new ResizeObserver(() => resize()).observe(stage);
+["pointerdown","pointermove","pointerup","wheel","touchmove"].forEach(ev => stage.addEventListener(ev, invalidate, {passive:true, capture:true}));
+["keydown","keyup"].forEach(ev => document.addEventListener(ev, invalidate, true));
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => rebuildScene());
 new MutationObserver(() => rebuildScene()).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
 

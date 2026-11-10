@@ -5,10 +5,12 @@ async function fbInit(){
   try{
     firebase.initializeApp(window.FB_CONFIG);
     const raw = firebase.firestore();
+    /* keep a copy on this device (IndexedDB): opens fast, works offline at the campsite, and edits made offline upload later */
+    try{ await raw.enablePersistence({synchronizeTabs:true}); }catch(e){ console.warn("offline cache off", e && e.code); }
     /* all data lives in collections named campplan_* so the Firebase project can be shared with other apps */
     /* each doc is stored as {_json:"..."} because Firestore rejects nested arrays (e.g. tent door lists) */
     const enc = d => ({_json: JSON.stringify(d)}), dec = x => (x && typeof x._json === "string") ? JSON.parse(x._json) : (x||{});
-    const wrapSnap = snap => ({ empty: snap.empty, docs: snap.docs.map(d => ({ id: d.id, data: () => dec(d.data()) })) });
+    const wrapSnap = snap => ({ empty: snap.empty, fromCache: !!(snap.metadata && snap.metadata.fromCache), docs: snap.docs.map(d => ({ id: d.id, data: () => dec(d.data()) })) });
     const fs = {
       collection: c => { const col = raw.collection("campplan_" + c); return {
         doc: id => { const r = col.doc(id); return { _raw: r, set: d => r.set(enc(d)), delete: () => r.delete(),
@@ -17,9 +19,10 @@ async function fbInit(){
         onSnapshot: (cb, err) => col.onSnapshot(snap => cb(wrapSnap(snap)), err) }; },
       batch: () => { const b = raw.batch(); return { set: (ref, d) => b.set(ref._raw, enc(d)), commit: () => b.commit() }; }
     };
-    /* fill the cloud before showing it; if the cloud can't be reached or written, stay on this browser's copy */
+    /* new seed gear / old browser-only layouts are added in the background, so the page doesn't wait for them;
+       the live listeners pick the new docs up when they land */
     const fbRO=/[?#&]view=/.test(location.search+location.hash); /* view-only share link: never write */
-    if(!fbRO){ await fbSyncSeed(fs); await fbUploadLocal(fs); }
+    if(!fbRO) (async()=>{ try{ await fbSyncSeed(fs); await fbUploadLocal(fs); }catch(e){ console.warn("seed sync", e); } })();
     return fs;
   }catch(e){ console.warn("firebase", e); fbInit.err = (e && (e.code || e.message)) || "unknown"; return null; }
 }
